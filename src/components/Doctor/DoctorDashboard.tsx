@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaUserEdit } from 'react-icons/fa';
+import { FaUserEdit, FaUserInjured, FaPrescriptionBottle, FaUpload } from 'react-icons/fa';
 
 const DoctorDashboard: React.FC = () => {
   const [patients, setPatients] = useState<any[]>([]);
@@ -29,108 +29,102 @@ const DoctorDashboard: React.FC = () => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       setUploadedFile(file);
-      setFileURL(URL.createObjectURL(file)); // prévisualisation locale
-  
-      // Envoyer au back Spring Boot
+      setFileURL(URL.createObjectURL(file));
+
       const formData = new FormData();
       formData.append('file', file);
-  
+
       try {
         const response = await fetch('http://localhost:8080/api/ordonnances/upload', {
           method: 'POST',
           body: formData,
         });
-  
+
         if (response.ok) {
           const text = await response.text();
-          alert(text); // message du serveur
+          alert(text);
         } else {
-          alert('Erreur lors de l\'upload de l\'ordonnance ');
+          alert('Erreur lors de l\'upload de l\'ordonnance');
         }
       } catch (error) {
         console.error(error);
-        alert('Erreur réseau ');
+        alert('Erreur réseau');
       }
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
-      <div className="container mx-auto bg-white p-6 rounded-lg shadow-lg flex">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white py-10 px-6">
+      <div className="max-w-6xl mx-auto space-y-10">
         
-        {/* Profil médecin */}
-        <div className="w-1/4 pr-6">
-          <div className="flex items-center mb-6">
-            <img 
-              src={doctorProfile.avatar} 
-              alt="Doctor Profile" 
-              className="w-16 h-16 rounded-full border-2 border-gray-300 mr-4" 
-            />
-            <div>
-              <h1 className="text-xl font-semibold text-gray-800">{doctorProfile.name}</h1>
-              <p className="text-sm text-gray-500">{doctorProfile.email}</p>
-            </div>
+        {/* Header médecin */}
+        <div className="flex items-center bg-white p-6 rounded-xl shadow-md">
+          <img
+            src={doctorProfile.avatar}
+            alt="Doctor"
+            className="w-20 h-20 rounded-full border-4 border-indigo-300 shadow mr-6"
+          />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">{doctorProfile.name}</h1>
+            <p className="text-gray-600">{doctorProfile.email}</p>
           </div>
-
-          <div className="text-center mt-4">
-            <FaUserEdit className="text-blue-500 cursor-pointer hover:text-blue-700" size={24} />
+          <div className="ml-auto text-indigo-600 hover:text-indigo-800 cursor-pointer">
+            <FaUserEdit size={24} />
           </div>
         </div>
 
-        {/* Contenu médecin */}
-        <div className="w-3/4">
-          <header className="mb-6 text-center">
-            <h2 className="text-3xl font-semibold text-gray-800">Tableau de bord du Médecin</h2>
-            <p className="text-lg text-gray-500 mt-2">Gestion des patients et des prescriptions</p>
-          </header>
+        {/* Liste des patients */}
+        <section className="bg-white p-6 rounded-xl shadow">
+          <div className="flex items-center text-indigo-600 mb-4">
+            <FaUserInjured className="mr-2" />
+            <h2 className="text-xl font-semibold text-gray-800">Liste des Patients</h2>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {patients.map((patient, index) => (
+              <div key={index} className="border p-4 rounded-lg shadow-sm hover:bg-gray-50">
+                <h3 className="font-semibold text-gray-800">{patient.name}</h3>
+                <p className="text-sm text-gray-500">{patient.email}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-          {/* Liste patients */}
-          <section className="mb-8">
-            <h2 className="text-2xl font-medium text-gray-700 mb-3">Liste des Patients</h2>
-            <div className="space-y-3">
-              {patients.map((patient, index) => (
-                <div key={index} className="border p-4 rounded-lg shadow-sm hover:bg-gray-50 cursor-pointer">
-                  <h3 className="text-lg font-semibold text-gray-800">{patient.name}</h3>
-                  <p className="text-sm text-gray-500">{patient.email}</p>
-                </div>
-              ))}
+        {/* Upload ordonnance */}
+        <section className="bg-white p-6 rounded-xl shadow">
+          <div className="flex items-center text-indigo-600 mb-4">
+            <FaUpload className="mr-2" />
+            <h2 className="text-xl font-semibold text-gray-800">Uploader une Ordonnance</h2>
+          </div>
+          <input
+            type="file"
+            accept="application/pdf,image/*"
+            onChange={handleFileUpload}
+            className="w-full"
+          />
+          {fileURL && (
+            <div className="mt-4">
+              <p className="font-semibold text-gray-700 mb-2">Aperçu :</p>
+              <iframe src={fileURL} className="w-full h-64 rounded-lg border" />
             </div>
-          </section>
+          )}
+        </section>
 
-          {/* Upload d'une ordonnance */}
-          <section className="mb-8">
-            <h2 className="text-2xl font-medium text-indigo-700 mb-3">Uploader une Ordonnance</h2>
-            <div className="bg-indigo-50 p-4 rounded-lg shadow-inner space-y-4">
-              <input
-                type="file"
-                accept="application/pdf,image/*"
-                onChange={handleFileUpload}
-                className="w-full"
-              />
-              {fileURL && (
-                <div className="mt-4">
-                  <p className="font-semibold text-gray-700 mb-2">Aperçu du fichier :</p>
-                  <iframe src={fileURL} className="w-full h-64 rounded-lg border" title="Ordonnance Preview" />
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Historique des prescriptions */}
-          <section className="mb-8">
-            <h2 className="text-2xl font-medium text-gray-700 mb-3">Historique des Prescriptions</h2>
-            <div className="space-y-3">
-              {prescriptions.map((prescription, index) => (
-                <div key={index} className="border p-4 rounded-lg shadow-sm hover:bg-gray-50">
-                  <h3 className="text-lg font-semibold text-gray-800">{prescription.patientName}</h3>
-                  <p className="text-sm text-gray-500">Médicament : {prescription.medication}</p>
-                  <p className="text-sm text-gray-500">Date : {prescription.date}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-        </div>
+        {/* Historique des prescriptions */}
+        <section className="bg-white p-6 rounded-xl shadow">
+          <div className="flex items-center text-indigo-600 mb-4">
+            <FaPrescriptionBottle className="mr-2" />
+            <h2 className="text-xl font-semibold text-gray-800">Historique des Prescriptions</h2>
+          </div>
+          <div className="space-y-3">
+            {prescriptions.map((prescription, index) => (
+              <div key={index} className="border p-4 rounded-lg shadow-sm hover:bg-gray-50">
+                <h3 className="text-lg font-semibold text-gray-800">{prescription.patientName}</h3>
+                <p className="text-sm text-gray-600">💊 {prescription.medication}</p>
+                <p className="text-sm text-gray-400">🗓️ {prescription.date}</p>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );
