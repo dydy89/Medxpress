@@ -45,11 +45,11 @@ const DoctorDashboard: React.FC = () => {
           const text = await response.text();
           alert(text); // message du serveur
         } else {
-          alert('Erreur lors de l\'upload de l\'ordonnance ❌');
+          alert('Erreur lors de l\'upload de l\'ordonnance ');
         }
       } catch (error) {
         console.error(error);
-        alert('Erreur réseau ❌');
+        alert('Erreur réseau ');
       }
     }
   };

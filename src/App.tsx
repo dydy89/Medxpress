@@ -1,6 +1,8 @@
 // src/App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+// Make sure the file exists at this path, or update the path if needed
+
 import MainPage from './components/MainPage';  // Page principale avec les cartes
 import PatientDashboard from './components/Patient/PatientDashboard';  // Page Patient
 import DoctorDashboard from './components/Doctor/DoctorDashboard';  // Page Doctor
@@ -16,6 +18,7 @@ const App: React.FC = () => {
         <Route path="/" element={<MainPage />} />
 
         {/* Routes pour chaque tableau de bord */}
+     
         <Route path="/patient" element={<PatientDashboard />} />
         <Route path="/doctor" element={<DoctorDashboard />} />
         <Route path="/pharmacist" element={<PharmacistDashboard />} />
