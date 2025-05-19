@@ -44,6 +44,23 @@ const RegisterPage: React.FC = () => {
               className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
+    <div>
+  <label htmlFor="statut" className="block text-sm font-medium text-gray-700">
+    Statut
+  </label>
+  <select
+    id="statut"
+    name="statut"
+    required
+    className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+  >
+    <option value="">-- Sélectionnez votre statut --</option>
+    <option value="patient">Patient</option>
+    <option value="doctor">Médecin</option>
+    <option value="pharmacist">Pharmacien</option>
+    <option value="courier">Livreur</option>
+  </select>
+</div>
 
           <button
             type="submit"
