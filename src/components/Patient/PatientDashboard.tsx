@@ -2,21 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Notification } from './Notifications';
 import { PrescriptionView } from './PrescriptionView';
 import { TreatmentTracker } from './TreatmentTracker';
+import { FaBell, FaFilePrescription, FaHeartbeat } from 'react-icons/fa';
 
 const PatientDashboard: React.FC = () => {
   const [notifications, setNotifications] = useState<string[]>([]);
   const [prescription, setPrescription] = useState<any>(null);
 
-  // Simuler les données du profil (dans un vrai cas, cela viendrait d'une API)
   const userProfile = {
     name: "John Doe",
-    avatar: "/images/avatar.jpg", // Remplace par l'URL de l'image de profil
+    avatar: "/images/avatar.jpg",
     email: "john.doe@example.com"
   };
 
   useEffect(() => {
-    // Simuler l'appel API pour récupérer les notifications et prescriptions
-    setNotifications(['Médicament en livraison', 'Rappel de prise de médicament']);
+    setNotifications(['📦 Médicament en livraison', '⏰ Rappel de prise de médicament']);
     setPrescription({
       medication: 'Médicament X',
       doctorName: 'Dr. Alice',
@@ -25,52 +24,58 @@ const PatientDashboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
-      <div className="container mx-auto bg-white p-6 rounded-lg shadow-lg">
-        {/* Profil en haut à gauche */}
-        <div className="flex items-center mb-6">
+    <div className="min-h-screen bg-gradient-to-r from-blue-50 to-green-50 py-10 px-4">
+      <div className="container mx-auto max-w-6xl">
+        {/* Header profil */}
+        <div className="flex items-center bg-white rounded-xl shadow-md p-6 mb-8">
           <img 
-            src={userProfile.avatar} 
-            alt="Profile" 
-            className="w-16 h-16 rounded-full border-2 border-gray-300 mr-4" 
+            src={userProfile.avatar}
+            alt="Profil"
+            className="w-20 h-20 rounded-full border-4 border-blue-300 shadow-md mr-6"
           />
           <div>
-            <h1 className="text-xl font-semibold text-gray-800">{userProfile.name}</h1>
-            <p className="text-sm text-gray-500">{userProfile.email}</p>
+            <h1 className="text-2xl font-bold text-gray-800">{userProfile.name}</h1>
+            <p className="text-gray-500">{userProfile.email}</p>
           </div>
         </div>
 
-        {/* Contenu du tableau de bord */}
-        <header className="mb-6 text-center">
-          <h2 className="text-3xl font-semibold text-gray-800">Tableau de bord du Patient</h2>
-          <p className="text-lg text-gray-500 mt-2">Suivi de votre traitement et réception de médicaments</p>
-        </header>
-
-        {/* Notifications */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-medium text-gray-700 mb-3">Notifications</h2>
-          <div className="space-y-3">
-            {notifications.map((notification, index) => (
-              <Notification key={index} message={notification} />
-            ))}
+        {/* Sections principales */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Notifications */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center mb-4">
+              <FaBell className="text-blue-500 mr-2" size={22} />
+              <h2 className="text-xl font-semibold text-gray-700">Notifications</h2>
+            </div>
+            <div className="space-y-3">
+              {notifications.map((notification, index) => (
+                <Notification key={index} message={notification} />
+              ))}
+            </div>
           </div>
-        </section>
 
-        {/* Prescriptions */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-medium text-gray-700 mb-3">Vos prescriptions</h2>
-          {prescription ? (
-            <PrescriptionView prescription={prescription} />
-          ) : (
-            <p className="text-gray-500">Aucune prescription disponible</p>
-          )}
-        </section>
+          {/* Prescriptions */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center mb-4">
+              <FaFilePrescription className="text-green-600 mr-2" size={22} />
+              <h2 className="text-xl font-semibold text-gray-700">Vos prescriptions</h2>
+            </div>
+            {prescription ? (
+              <PrescriptionView prescription={prescription} />
+            ) : (
+              <p className="text-gray-500">Aucune prescription disponible</p>
+            )}
+          </div>
+        </div>
 
-        {/* Suivi de traitement */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-medium text-gray-700 mb-3">Suivi de votre traitement</h2>
+        {/* Traitement */}
+        <div className="bg-white rounded-xl shadow-lg p-6 mt-8">
+          <div className="flex items-center mb-4">
+            <FaHeartbeat className="text-red-500 mr-2" size={22} />
+            <h2 className="text-xl font-semibold text-gray-700">Suivi de votre traitement</h2>
+          </div>
           <TreatmentTracker />
-        </section>
+        </div>
       </div>
     </div>
   );
@@ -78,4 +83,6 @@ const PatientDashboard: React.FC = () => {
 
 
 
+
 export default PatientDashboard;
+
