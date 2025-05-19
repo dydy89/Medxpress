@@ -1,6 +1,9 @@
 // src/App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
+import LoginPage from './login/LoginPage';
+import RegisterPage from './login/RegisterPage';
 import MainPage from './components/MainPage';  // Page principale avec les cartes
 import PatientDashboard from './components/Patient/PatientDashboard';  // Page Patient
 import DoctorDashboard from './components/Doctor/DoctorDashboard';  // Page Doctor
@@ -12,8 +15,10 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         {/* Route principale */}
-        <Route path="/" element={<MainPage />} />
+        <Route path="/main" element={<MainPage />} />
 
         {/* Routes pour chaque tableau de bord */}
         <Route path="/patient" element={<PatientDashboard />} />
