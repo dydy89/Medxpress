@@ -1,8 +1,53 @@
 // src/components/RegisterPage.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const RegisterPage: React.FC = () => {
+  const [selectedStatut, setSelectedStatut] = useState('');
+  const [kbisNumber, setKbisNumber] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  const handleKbisChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 3) value = value.substring(0, 3) + ' ' + value.substring(3);
+    if (value.length > 7) value = value.substring(0, 7) + ' ' + value.substring(7);
+    setKbisNumber(value.substring(0, 11));
+  };
+
+  const validatePassword = (value: string) => {
+    const minimumLength = 12;
+    const hasNumber = /\d/.test(value);
+    const hasSpecialCharacter = /[!@#$%^&*(),.?":{}|<>]/.test(value);
+    
+    if (value.length < minimumLength) {
+      return `Le mot de passe doit contenir au moins ${minimumLength} caractères dont 1 chiffre et 1 caractère spécial`;
+    }
+    if (!hasNumber) {
+      return 'Le mot de passe doit contenir au moins 1 chiffre';
+    }
+    if (!hasSpecialCharacter) {
+      return 'Le mot de passe doit contenir au moins 1 caractère spécial';
+    }
+    return '';
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPassword(value);
+    setPasswordError(validatePassword(value));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const error = validatePassword(password);
+    setPasswordError(error);
+    
+    if (!error) {
+      console.log('Form submitted successfully');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
@@ -29,8 +74,15 @@ const RegisterPage: React.FC = () => {
               id="password"
               type="password"
               required
-              className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              value={password}
+              onChange={handlePasswordChange}
+              className={`mt-1 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                passwordError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500'
+              }`}
             />
+            {passwordError && (
+              <p className="mt-1 text-sm text-red-600">{passwordError}</p>
+            )}
           </div>
 
           <div>
@@ -44,27 +96,52 @@ const RegisterPage: React.FC = () => {
               className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
-    <div>
-  <label htmlFor="statut" className="block text-sm font-medium text-gray-700">
-    Statut
-  </label>
-  <select
-    id="statut"
-    name="statut"
-    required
-    className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-  >
-    <option value="">-- Sélectionnez votre statut --</option>
-    <option value="patient">Patient</option>
-    <option value="doctor">Médecin</option>
-    <option value="pharmacist">Pharmacien</option>
-    <option value="courier">Livreur</option>
-  </select>
-</div>
+      <div>
+      <label htmlFor="statut" className="block text-sm font-medium text-gray-700">
+        Statut
+      </label>
+      <select
+        id="statut"
+        name="statut"
+        required
+        value={selectedStatut}
+        onChange={(e) => setSelectedStatut(e.target.value)}
+        className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+      >
+        <option value="">-- Sélectionnez votre statut --</option>
+        <option value="patient">Patient</option>
+        <option value="doctor">Médecin</option>
+        <option value="pharmacist">Pharmacien</option>
+        <option value="courier">Livreur</option>
+      </select>
+    </div>
+
+    {selectedStatut === 'courier' && (
+        <div>
+          <label htmlFor="kbis" className="block text-sm font-medium text-gray-700">
+            Immatriculation KBIS
+          </label>
+          <input
+            id="kbis"
+            type="text"
+            value={kbisNumber}
+            onChange={handleKbisChange}
+            placeholder="XXX XXX XXX"
+            pattern="\d{3} \d{3} \d{3}"
+            required={selectedStatut === 'courier'}
+            className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+        </div>
+    )}
 
           <button
             type="submit"
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition"
+            disabled={!!passwordError}
+            className={`w-full font-semibold py-2 px-4 rounded-lg transition ${
+              passwordError
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700 text-white'
+            }`}
           >
             S'inscrire
           </button>
