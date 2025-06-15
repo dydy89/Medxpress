@@ -1,12 +1,15 @@
-// src/components/RegisterPage.tsx
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const RegisterPage: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [selectedStatut, setSelectedStatut] = useState('');
   const [kbisNumber, setKbisNumber] = useState('');
-  const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const navigate = useNavigate();
 
   const handleKbisChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, '');
@@ -32,19 +35,38 @@ const RegisterPage: React.FC = () => {
     return '';
   };
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setPassword(value);
-    setPasswordError(validatePassword(value));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const error = validatePassword(password);
     setPasswordError(error);
-    
+
+    if (password !== confirmPassword) {
+      setPasswordError("Les mots de passe ne correspondent pas");
+      return;
+    }
+
     if (!error) {
-      console.log('Form submitted successfully');
+      const roleMapping: { [key: string]: string } = {
+        patient: 'PATIENT',
+        doctor: 'DOCTOR',
+        pharmacist: 'PHARMACIST',
+        courier: 'DELIVERY_DRIVER',
+      };
+
+      try {
+        await axios.post('http://localhost:8080/api/auth/signup', {
+          email: email,
+          password: password,
+          role: roleMapping[selectedStatut],
+          kbisNumber: selectedStatut === 'courier' ? kbisNumber : undefined
+        });
+
+        alert("Compte créé avec succès !");
+        navigate('/'); // Redirection vers la page de connexion
+      } catch (err) {
+        console.error(err);
+        alert("Erreur lors de la création du compte");
+      }
     }
   };
 
@@ -53,7 +75,7 @@ const RegisterPage: React.FC = () => {
       <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold text-center mb-6">Inscription</h2>
 
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               Email
@@ -61,6 +83,8 @@ const RegisterPage: React.FC = () => {
             <input
               id="email"
               type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
               required
               className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             />
@@ -73,9 +97,12 @@ const RegisterPage: React.FC = () => {
             <input
               id="password"
               type="password"
-              required
               value={password}
-              onChange={handlePasswordChange}
+              onChange={e => {
+                setPassword(e.target.value);
+                setPasswordError(validatePassword(e.target.value));
+              }}
+              required
               className={`mt-1 w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
                 passwordError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500'
               }`}
@@ -92,47 +119,50 @@ const RegisterPage: React.FC = () => {
             <input
               id="confirm-password"
               type="password"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
               required
               className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
-      <div>
-      <label htmlFor="statut" className="block text-sm font-medium text-gray-700">
-        Statut
-      </label>
-      <select
-        id="statut"
-        name="statut"
-        required
-        value={selectedStatut}
-        onChange={(e) => setSelectedStatut(e.target.value)}
-        className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-      >
-        <option value="">-- Sélectionnez votre statut --</option>
-        <option value="patient">Patient</option>
-        <option value="doctor">Médecin</option>
-        <option value="pharmacist">Pharmacien</option>
-        <option value="courier">Livreur</option>
-      </select>
-    </div>
 
-    {selectedStatut === 'courier' && (
-        <div>
-          <label htmlFor="kbis" className="block text-sm font-medium text-gray-700">
-            Immatriculation KBIS
-          </label>
-          <input
-            id="kbis"
-            type="text"
-            value={kbisNumber}
-            onChange={handleKbisChange}
-            placeholder="XXX XXX XXX"
-            pattern="\d{3} \d{3} \d{3}"
-            required={selectedStatut === 'courier'}
-            className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-        </div>
-    )}
+          <div>
+            <label htmlFor="statut" className="block text-sm font-medium text-gray-700">
+              Statut
+            </label>
+            <select
+              id="statut"
+              name="statut"
+              required
+              value={selectedStatut}
+              onChange={(e) => setSelectedStatut(e.target.value)}
+              className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="">-- Sélectionnez votre statut --</option>
+              <option value="patient">Patient</option>
+              <option value="doctor">Médecin</option>
+              <option value="pharmacist">Pharmacien</option>
+              <option value="courier">Livreur</option>
+            </select>
+          </div>
+
+          {selectedStatut === 'courier' && (
+            <div>
+              <label htmlFor="kbis" className="block text-sm font-medium text-gray-700">
+                Immatriculation KBIS
+              </label>
+              <input
+                id="kbis"
+                type="text"
+                value={kbisNumber}
+                onChange={handleKbisChange}
+                placeholder="XXX XXX XXX"
+                pattern="\d{3} \d{3} \d{3}"
+                required
+                className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+          )}
 
           <button
             type="submit"

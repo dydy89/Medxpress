@@ -1,130 +1,57 @@
-import React, { useState, useEffect } from 'react';
-import { FaUserEdit, FaUserInjured, FaPrescriptionBottle, FaUpload } from 'react-icons/fa';
+import React, { useState } from 'react';
+import { FaUserInjured, FaCalendarAlt, FaPrescriptionBottle, FaQrcode } from 'react-icons/fa';
+import { StatCard } from '../../components/StatCard';
+import { Tabs } from '../../components/Tabs';
+
+type TabKey = "Mes Patients" | "Ordonnances" | "Nouvelle Ordonnance";
 
 const DoctorDashboard: React.FC = () => {
-  const [patients, setPatients] = useState<any[]>([]);
-  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<TabKey>("Nouvelle Ordonnance");
 
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [fileURL, setFileURL] = useState<string>('');
+  
 
-  const doctorProfile = {
-    name: "Dr. Alice",
-    avatar: "/images/doctor-avatar.jpg",
-    email: "alice.doctor@example.com"
-  };
+  const tabContent: Record<TabKey, JSX.Element> = {
+    "Mes Patients": <div>Liste de patients ici</div>,
+    "Ordonnances": <div>Historique des ordonnances ici</div>,
+    "Nouvelle Ordonnance": (
+      <div className="bg-white p-6 rounded-xl shadow">
+        <h2 className="text-xl font-semibold text-gray-800 mb-1">Nouvelle Ordonnance</h2>
+        <p className="text-sm text-gray-500 mb-6">Création de l'ordonnace du patient</p>
 
-  useEffect(() => {
-    setPatients([
-      { id: 1, name: 'John Doe', email: 'john.doe@example.com' },
-      { id: 2, name: 'Jane Smith', email: 'jane.smith@example.com' }
-    ]);
-    setPrescriptions([
-      { patientName: 'John Doe', medication: 'Médicament X', date: '2025-04-10' },
-      { patientName: 'Jane Smith', medication: 'Médicament Y', date: '2025-04-12' }
-    ]);
-  }, []);
+        <div className="grid sm:grid-cols-2 gap-4">
+          <input type="text" placeholder="Nom du patient" className="input" />
+          <input type="date" className="input" />
+        </div>
+        <input type="text" placeholder="Médicaments prescrits" className="input mt-4" />
+        <input type="text" placeholder="Instructions de prise" className="input mt-4" />
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      setUploadedFile(file);
-      setFileURL(URL.createObjectURL(file));
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        const response = await fetch('http://localhost:8080/api/ordonnances/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (response.ok) {
-          const text = await response.text();
-          alert(text);
-        } else {
-          alert('Erreur lors de l\'upload de l\'ordonnance');
-        }
-      } catch (error) {
-        console.error(error);
-        alert('Erreur réseau');
-      }
-    }
+        <button className="mt-6 bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded flex items-center">
+          <FaQrcode className="mr-2" /> Générer Ordonnance 
+        </button>
+      </div>
+    )
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white py-10 px-6">
-      <div className="max-w-6xl mx-auto space-y-10">
-        
-        {/* Header médecin */}
-        <div className="flex items-center bg-white p-6 rounded-xl shadow-md">
-          <img
-            src={doctorProfile.avatar}
-            alt="Doctor"
-            className="w-20 h-20 rounded-full border-4 border-indigo-300 shadow mr-6"
-          />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">{doctorProfile.name}</h1>
-            <p className="text-gray-600">{doctorProfile.email}</p>
-          </div>
-          <div className="ml-auto text-indigo-600 hover:text-indigo-800 cursor-pointer">
-            <FaUserEdit size={24} />
-          </div>
-        </div>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">Dr. Martin Leroy</h1>
+        <p className="text-gray-600">Gestion des patients et ordonnances</p>
+      </header>
 
-        {/* Liste des patients */}
-        <section className="bg-white p-6 rounded-xl shadow">
-          <div className="flex items-center text-indigo-600 mb-4">
-            <FaUserInjured className="mr-2" />
-            <h2 className="text-xl font-semibold text-gray-800">Liste des Patients</h2>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {patients.map((patient, index) => (
-              <div key={index} className="border p-4 rounded-lg shadow-sm hover:bg-gray-50">
-                <h3 className="font-semibold text-gray-800">{patient.name}</h3>
-                <p className="text-sm text-gray-500">{patient.email}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+      {/* Cartes statistiques */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        <StatCard title="Patients" value="127" icon={<FaUserInjured size={24} />} />
+        <StatCard title="Ordonnances" value="89" icon={<FaPrescriptionBottle size={24} />} />
+        <StatCard title="RDV Aujourd'hui" value="12" icon={<FaCalendarAlt size={24} />} />
+       
+      </div>
 
-        {/* Upload ordonnance */}
-        <section className="bg-white p-6 rounded-xl shadow">
-          <div className="flex items-center text-indigo-600 mb-4">
-            <FaUpload className="mr-2" />
-            <h2 className="text-xl font-semibold text-gray-800">Uploader une Ordonnance</h2>
-          </div>
-          <input
-            type="file"
-            accept="application/pdf,image/*"
-            onChange={handleFileUpload}
-            className="w-full"
-          />
-          {fileURL && (
-            <div className="mt-4">
-              <p className="font-semibold text-gray-700 mb-2">Aperçu :</p>
-              <iframe src={fileURL} className="w-full h-64 rounded-lg border" />
-            </div>
-          )}
-        </section>
+      {/* Onglets */}
+      <Tabs tabs={Object.keys(tabContent)} activeTab={activeTab} onChange={(tab) => setActiveTab(tab as TabKey)} />
 
-        {/* Historique des prescriptions */}
-        <section className="bg-white p-6 rounded-xl shadow">
-          <div className="flex items-center text-indigo-600 mb-4">
-            <FaPrescriptionBottle className="mr-2" />
-            <h2 className="text-xl font-semibold text-gray-800">Historique des Prescriptions</h2>
-          </div>
-          <div className="space-y-3">
-            {prescriptions.map((prescription, index) => (
-              <div key={index} className="border p-4 rounded-lg shadow-sm hover:bg-gray-50">
-                <h3 className="text-lg font-semibold text-gray-800">{prescription.patientName}</h3>
-                <p className="text-sm text-gray-600">💊 {prescription.medication}</p>
-                <p className="text-sm text-gray-400">🗓️ {prescription.date}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+      <div className="mt-6">
+        {tabContent[activeTab]}
       </div>
     </div>
   );

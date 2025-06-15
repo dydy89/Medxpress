@@ -1966,6 +1966,13 @@
   resolved "https://registry.npmjs.org/@types/aria-query/-/aria-query-5.0.4.tgz"
   integrity sha512-rfT93uj5s0PRL7EzccGMs3brplhcrghnDoV26NqKhCAS1hVo+WdNsPvE/yb6ilfr5hi2MEk6d5EWJTKdxg8jVw==
 
+"@types/axios@^0.14.4":
+  version "0.14.4"
+  resolved "https://registry.npmjs.org/@types/axios/-/axios-0.14.4.tgz"
+  integrity sha512-9JgOaunvQdsQ/qW2OPmE5+hCeUB52lQSolecrFrthct55QekhmXEwT203s20RL+UHtCQc15y3VXpby9E7Kkh/g==
+  dependencies:
+    axios "*"
+
 "@types/babel__core@^7.0.0", "@types/babel__core@^7.1.14":
   version "7.20.5"
   resolved "https://registry.npmjs.org/@types/babel__core/-/babel__core-7.20.5.tgz"
@@ -2163,6 +2170,13 @@
   version "0.0.29"
   resolved "https://registry.npmjs.org/@types/json5/-/json5-0.0.29.tgz"
   integrity sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==
+
+"@types/jwt-decode@^3.1.0":
+  version "3.1.0"
+  resolved "https://registry.npmjs.org/@types/jwt-decode/-/jwt-decode-3.1.0.tgz"
+  integrity sha512-tthwik7TKkou3mVnBnvVuHnHElbjtdbM63pdBCbZTirCt3WAdM73Y79mOri7+ljsS99ZVwUFZHLMxJuJnv/z1w==
+  dependencies:
+    jwt-decode "*"
 
 "@types/mime@^1":
   version "1.3.5"
@@ -2933,6 +2947,15 @@ axe-core@^4.10.0:
   version "4.10.3"
   resolved "https://registry.npmjs.org/axe-core/-/axe-core-4.10.3.tgz"
   integrity sha512-Xm7bpRXnDSX2YE2YFfBk2FnF0ep6tmG7xPh8iHee8MIcrgq762Nkce856dYtJYLkuIoYZvGfTs/PbZhideTcEg==
+
+axios@*, axios@^1.10.0:
+  version "1.10.0"
+  resolved "https://registry.npmjs.org/axios/-/axios-1.10.0.tgz"
+  integrity sha512-/1xYAC4MP/HEG+3duIhFr4ZQXR4sQXOIe+o6sdqzeykGLx6Upp/1p8MHqhINOvGeP7xyNHe7tsiJByc4SSVUxw==
+  dependencies:
+    follow-redirects "^1.15.6"
+    form-data "^4.0.0"
+    proxy-from-env "^1.1.0"
 
 axobject-query@^4.1.0:
   version "4.1.0"
@@ -4929,7 +4952,7 @@ flatted@^3.2.9:
   resolved "https://registry.npmjs.org/flatted/-/flatted-3.3.3.tgz"
   integrity sha512-GX+ysw4PBCz0PzosHDepZGANEuFCMLrnRTiEy9McGjmkCQYwRq4A/X786G/fjM/+OjsWSU1ZrY5qyARZmO/uwg==
 
-follow-redirects@^1.0.0:
+follow-redirects@^1.0.0, follow-redirects@^1.15.6:
   version "1.15.9"
   resolved "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.15.9.tgz"
   integrity sha512-gew4GsXizNgdoRyqmyfMHyAmXsZDk6mHkSxZFCzW9gwlbtOW44CDtYavM+y+72qD/Vq2l550kMF52DT8fOLJqQ==
@@ -4977,6 +5000,16 @@ form-data@^3.0.0:
     combined-stream "^1.0.8"
     es-set-tostringtag "^2.1.0"
     mime-types "^2.1.35"
+
+form-data@^4.0.0:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/form-data/-/form-data-4.0.2.tgz"
+  integrity sha512-hGfm/slu0ZabnNt4oaRZ6uREyfCj6P4fT/n6A1rGV+Z0VdGXjfOhVUpkn6qVQONHGIFwmveGXyDs75+nr6FM8w==
+  dependencies:
+    asynckit "^0.4.0"
+    combined-stream "^1.0.8"
+    es-set-tostringtag "^2.1.0"
+    mime-types "^2.1.12"
 
 forwarded@0.2.0:
   version "0.2.0"
@@ -6579,6 +6612,11 @@ jsonpointer@^5.0.0:
     object.assign "^4.1.4"
     object.values "^1.1.6"
 
+jwt-decode@*, jwt-decode@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.npmjs.org/jwt-decode/-/jwt-decode-4.0.0.tgz"
+  integrity sha512-+KJGIyHgkGuIq3IEBNftfhW/LfWhXUIY6OmyVWjliu5KH1y0fw7VQ8YndE2O4qZdMSd9SqbnC8GOcZEy0Om7sA==
+
 keyv@^4.5.3:
   version "4.5.4"
   resolved "https://registry.npmjs.org/keyv/-/keyv-4.5.4.tgz"
@@ -6759,6 +6797,11 @@ lru-cache@^5.1.1:
   dependencies:
     yallist "^3.0.2"
 
+lucide-react@^0.515.0:
+  version "0.515.0"
+  resolved "https://registry.npmjs.org/lucide-react/-/lucide-react-0.515.0.tgz"
+  integrity sha512-Sy7bY0MeicRm2pzrnoHm2h6C1iVoeHyBU2fjdQDsXGP51fhkhau1/ZV/dzrcxEmAKsxYb6bGaIsMnGHuQ5s0dw==
+
 lz-string@^1.5.0:
   version "1.5.0"
   resolved "https://registry.npmjs.org/lz-string/-/lz-string-1.5.0.tgz"
@@ -6857,7 +6900,7 @@ micromatch@^4.0.2, micromatch@^4.0.4, micromatch@^4.0.5, micromatch@^4.0.8:
   resolved "https://registry.npmjs.org/mime-db/-/mime-db-1.52.0.tgz"
   integrity sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==
 
-mime-types@^2.1.27, mime-types@^2.1.31, mime-types@^2.1.35, mime-types@~2.1.17, mime-types@~2.1.24, mime-types@~2.1.34:
+mime-types@^2.1.12, mime-types@^2.1.27, mime-types@^2.1.31, mime-types@^2.1.35, mime-types@~2.1.17, mime-types@~2.1.24, mime-types@~2.1.34:
   version "2.1.35"
   resolved "https://registry.npmjs.org/mime-types/-/mime-types-2.1.35.tgz"
   integrity sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw==
@@ -8051,6 +8094,11 @@ proxy-addr@~2.0.7:
   dependencies:
     forwarded "0.2.0"
     ipaddr.js "1.9.1"
+
+proxy-from-env@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.npmjs.org/proxy-from-env/-/proxy-from-env-1.1.0.tgz"
+  integrity sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==
 
 psl@^1.1.33:
   version "1.15.0"

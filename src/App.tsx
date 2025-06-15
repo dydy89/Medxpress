@@ -1,40 +1,26 @@
-// src/App.tsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
-// Make sure the file exists at this path, or update the path if needed
-
-
+import { Routes, Route } from 'react-router-dom';
 
 import LoginPage from './login/LoginPage';
 import RegisterPage from './login/RegisterPage';
 
-import MainPage from './components/MainPage';  // Page principale avec les cartes
-import PatientDashboard from './components/Patient/PatientDashboard';  // Page Patient
-import DoctorDashboard from './components/Doctor/DoctorDashboard';  // Page Doctor
-import PharmacistDashboard from './components/Pharmacist/PharmacistDashboard';  // Page Pharmacien
-import CourierDashboard from './components/Courier/CourierDashboard';  // Page Livreur
-
+import MainPage from './components/MainPage';
+import PatientDashboard from './components/Patient/PatientDashboard';
+import DoctorDashboard from './components/Doctor/DoctorDashboard';
+import PharmacistDashboard from './components/Pharmacist/PharmacistDashboard';
+import CourierDashboard from './components/Courier/CourierDashboard';
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        {/* Route principale */}
-        <Route path="/main" element={<MainPage />} />
-
-        {/* Routes pour chaque tableau de bord */}
-     
-        <Route path="/patient" element={<PatientDashboard />} />
-        <Route path="/doctor" element={<DoctorDashboard />} />
-        <Route path="/pharmacist" element={<PharmacistDashboard />} />
-        <Route path="/courier" element={<CourierDashboard />} />
-
-
-      </Routes>
-    </Router>
+    <Routes>
+      <Route path="/" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/main" element={<MainPage />} />
+      <Route path="/patient" element={<PatientDashboard />} />
+      <Route path="/doctor" element={<DoctorDashboard />} />
+      <Route path="/pharmacist" element={<PharmacistDashboard />} />
+      <Route path="/courier" element={<CourierDashboard />} />
+    </Routes>
   );
 };
 

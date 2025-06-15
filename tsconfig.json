@@ -18,7 +18,13 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "preserve"
+    "jsx": "preserve",
+
+    // 💡 Ajoute ceci :
+    "baseUrl": "src",
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
   "include": [
     "src"
