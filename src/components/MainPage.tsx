@@ -23,6 +23,8 @@ const MainPage: React.FC = () => {
           <p className="mt-4 text-lg">Docteur</p>
         </Link>
 
+
+
         <Link to="/courier" className="flex flex-col justify-center items-center bg-red-500 hover:bg-red-600 text-white p-10 rounded-xl shadow-xl cursor-pointer transform hover:scale-105 transition-all">
           <FaTruck size={60} />
           <p className="mt-4 text-lg">Livreur</p>
