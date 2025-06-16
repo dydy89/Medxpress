@@ -19,7 +19,6 @@ interface CreateOrderRequest {
   deliveryDriverId: number;
 }
 
-
 interface Medicament {
   id: number;
   name: string;
@@ -47,42 +46,93 @@ interface Prescription {
 const PatientDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('Mes Ordonnances');
   const [selectedPrescriptionId, setSelectedPrescriptionId] = useState<number | null>(null);
-
+  const [orderedPrescriptions, setOrderedPrescriptions] = useState<number[]>([]);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [activeOrders, setActiveOrders] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-
   const [user, setUser] = useState<User | null>(null);
 
-  const patientId = 1; // À remplacer dynamiquement si besoin
+  const patientId = 2;
+  
 
-  // 🔹 Récupère les prescriptions du patient
   useEffect(() => {
-    setLoading(true);
-    setError(null);
+  setLoading(true);
+  setError(null);
 
-    axios.get(`http://localhost:8080/api/prescription/getAll/${patientId}`)
-      .then(response => {
-        setPrescriptions(response.data);
-      })
-      .catch(() => {
-        setError("Impossible de charger les ordonnances.");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [patientId]);
+  
+  const token = localStorage.getItem("token");
+  
+  console.log("aaa", token);
+  axios.get(`http://localhost:8080/api/prescription/getAll/${patientId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`  // Ajout du header Authorization
+    }
+  })
+  .then(response => {
+    setPrescriptions(response.data);
+  })
+  .catch(() => {
+    setError("");
+  })
+  .finally(() => {
+    setLoading(false);
+  });
+}, [patientId]);
 
-  // 🔹 Récupère les infos de l'utilisateur (nom + prénom)
+
+  // 🔹 Récupère les infos du patient
   useEffect(() => {
-    axios.get(`http://localhost:8080/api/user/${patientId}`)
-      .then(response => {
-        setUser(response.data);
-      })
-      .catch(error => {
-        console.error('Erreur lors de la récupération de l\'utilisateur :', error);
-      });
-  }, [patientId]);
+  const token = localStorage.getItem("token");
+
+  axios.get(`http://localhost:8080/api/user/${patientId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  })
+    .then(response => {
+      setUser(response.data);
+    })
+    .catch(error => {
+      console.error('Erreur lors de la récupération de l\'utilisateur :', error);
+    });
+}, [patientId]);
+
+
+  useEffect(() => {
+  const fetchActiveOrders = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.warn("Aucun token trouvé dans le localStorage.");
+      return;
+    }
+
+    const result: Record<number, string> = {};
+
+    await Promise.all(prescriptions.map(async (p) => {
+      try {
+        const res = await axios.get(
+          `http://localhost:8080/api/order/by-prescription/${p.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+        result[p.id] = res.data.status;
+      } catch (err) {
+        // Pas de commande active => ne rien mettre
+      }
+    }));
+
+    setActiveOrders(result);
+  };
+
+  if (prescriptions.length > 0) {
+    fetchActiveOrders();
+  }
+}, [prescriptions]);
+
 
   const handleLogout = () => {
     window.location.href = '/login';
@@ -102,38 +152,46 @@ const PatientDashboard: React.FC = () => {
   };
 
   const handleOrder = (prescriptionId: number) => {
+      const token = localStorage.getItem("token");
+
     const request: CreateOrderRequest = {
       prescriptionId,
       patientId,
-      pharmacyId: 1, // ⚠️ À adapter selon ton cas réel
-      deliveryDriverId: 1, // ⚠️ À adapter selon ton cas réel
+      pharmacyId: 1,
+      deliveryDriverId: 1,
     };
 
-    axios.post('http://localhost:8080/api/order/createOrder', request)
-      .then(response => {
-        alert('Commande créée avec succès !');
-        console.log('Commande créée :', response.data);
-      })
-      .catch(error => {
-        console.error('Erreur lors de la commande :', error);
-        alert('Erreur lors de la création de la commande.');
-      });
-  };
+axios.post(
+    'http://localhost:8080/api/order/createOrder',
+    request,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    }
+  )
+.then(response => {
+    alert('Commande créée avec succès !');
+    console.log('Commande créée :', response.data);
+    setOrderedPrescriptions(prev => [...prev, prescriptionId]);
+  })
+  .catch(error => {
+    console.error('Erreur lors de la commande :', error);
+    alert('Erreur lors de la création de la commande.');
+  });
+};
+
 
 
   const selectedPrescription = prescriptions.find(p => p.id === selectedPrescriptionId);
-
-  const handleSendToDelivery = () => {
-    if (!selectedPrescriptionId) return;
-    // TODO : Logique d'envoi en livraison
-  };
 
   const tabContent: Record<TabKey, JSX.Element> = {
     'Mes Ordonnances': (
       <div className="bg-white p-6 rounded-xl shadow">
         <h2 className="text-lg font-semibold text-gray-800 mb-2">Mes Ordonnances</h2>
 
-        {loading && <p>Chargement des ordonnances...</p>}
+        {loading && <p>Aucune ordonnances</p>}
         {error && <p className="text-red-600">{error}</p>}
 
         {!loading && !error && prescriptions.length === 0 && (
@@ -148,19 +206,26 @@ const PatientDashboard: React.FC = () => {
             >
               <div>
                 <h3 className="font-semibold text-gray-800">{p.doctorEntity.name}</h3>
-                <p className="text-sm text-gray-500">{new Date(p.date).toLocaleDateString()}</p>
+                <p className="text-sm text-gray-500">ID Patient : {p.patient.name} (id: {patientId})</p>
                 <p className="text-sm text-gray-500">{p.medicaments.length} médicament(s)</p>
               </div>
               <div className="flex items-center space-x-4">
                 <span className={`text-sm px-3 py-1 rounded-full ${getStatusStyle(p.status)}`}>
                   {p.status}
                 </span>
-                <button
-                  onClick={() => handleOrder(p.id)}
-                  className="bg-gray-900 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm"
-                >
-                  Commander
-                </button>
+
+                {activeOrders[p.id] ? (
+                  <span className="text-sm font-medium text-yellow-600">
+                    {activeOrders[p.id]}
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => handleOrder(p.id)}
+                    className="bg-gray-900 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm"
+                  >
+                    Commander
+                  </button>
+                )}
               </div>
             </div>
           ))}

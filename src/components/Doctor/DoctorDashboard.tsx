@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import axios from 'axios';
 import { FaUserInjured, FaPrescriptionBottle } from 'react-icons/fa';
 import { StatCard } from '../../components/StatCard';
 import { Tabs } from '../../components/Tabs';
 
-type TabKey = "Mes Patients" | "Ordonnances" | "Nouvelle Ordonnance";
+type TabKey = "My Patients" | "Prescriptions" | "New Prescription";
+
+const token = localStorage.getItem("token");
 
 type MedicamentItem = {
   medicament: string;
@@ -12,32 +14,40 @@ type MedicamentItem = {
 };
 
 const DoctorDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabKey>("Mes Patients");
-  const [doctorName, setDoctorName] = useState("Docteur"); // Nom dynamique du médecin
+  const [activeTab, setActiveTab] = useState<TabKey>("My Patients");
+  const [doctorName, setDoctorName] = useState("Doctor");
 
-  // États pour l’onglet “Nouvelle Ordonnance”
   const [selectedPatient, setSelectedPatient] = useState("");
   const [selectedMedicament, setSelectedMedicament] = useState("");
   const [selectedQuantity, setSelectedQuantity] = useState(1);
   const [prescriptions, setPrescriptions] = useState<MedicamentItem[]>([]);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const patients = [
-    { id: 2, name: "Jean Dupont" },
+    { id: 2, name: "John Smith" },
     { id: 3, name: "Marie Curie" },
   ];
 
-  const medicaments = ["Déphéralgan", "Ibuprofène", "Doliprane", "Amoxicilline"];
+  const medicaments = ["Paracetamol", "Ibuprofen", "Doliprane", "Amoxicillin"];
 
-  // 🔁 Appel API pour récupérer le nom du médecin
   useEffect(() => {
-    axios.get("http://localhost:8080/api/user/1")
-      .then((res) => {
-        const fullName = `${res.data.name} ${res.data.firstname}`;
-        setDoctorName(fullName);
-      })
-      .catch((error) => {
-        console.error("Erreur lors de la récupération du médecin :", error);
-      });
+    if (!token) {
+      console.warn("Missing token in localStorage.");
+      return;
+    }
+
+    axios.get("http://localhost:8080/api/user/3", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    .then((res) => {
+      const fullName = `${res.data.name} ${res.data.firstName}`;
+      setDoctorName(fullName);
+    })
+    .catch((error) => {
+      console.error("Failed to fetch doctor:", error);
+    });
   }, []);
 
   const handleAdd = () => {
@@ -50,50 +60,68 @@ const DoctorDashboard: React.FC = () => {
   const handleCreatePrescription = async () => {
     const patient = patients.find((p) => p.id.toString() === selectedPatient);
     if (!patient || prescriptions.length === 0) {
-      alert("Veuillez sélectionner un patient et ajouter au moins un médicament.");
+      setMessage({ type: 'error', text: 'Please select a patient and add at least one medication.' });
       return;
     }
 
     const payload = {
-      doctorEntity: { id: 1 },
-      patient: { id: patient.id },
-      medicaments: prescriptions.map((item) => ({ nom: item.medicament })),
+      doctorEntity: { id: 2 },
+      patient: { id: 3 },
+      medicaments: prescriptions.map((item) => ({
+        nom: item.medicament
+      })),
     };
+
+    console.log("Payload envoyé:", JSON.stringify(payload));
 
     try {
       const response = await fetch("http://localhost:8080/api/prescription/addPrescription", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error("Erreur lors de la création de l'ordonnance");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to create prescription");
+      }
+
       const text = await response.text();
-      alert(text);
-      console.log("Réponse brute de l'API :", text);
+      setMessage({ type: 'success', text });
       setPrescriptions([]);
+      setSelectedPatient("");
     } catch (error) {
-      console.error("Erreur API :", error);
-      alert("Échec de la création de l'ordonnance");
+      console.error("API Error:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create the prescription.';
+      setMessage({ type: 'error', text: errorMessage });
     }
   };
 
   const tabContent: Record<TabKey, JSX.Element> = {
-    "Mes Patients": <div>Liste de patients ici</div>,
-    "Ordonnances": <div>Historique des ordonnances ici</div>,
-    "Nouvelle Ordonnance": (
+    "My Patients": <div>Patient list goes here</div>,
+    "Prescriptions": <div>Prescription history goes here</div>,
+    "New Prescription": (
       <div className="flex justify-center">
-        <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-lg space-y-6">
-          <h2 className="text-2xl font-bold text-center">Créer une prescription</h2>
+        <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-lg space-y-6 border border-gray-200">
+          <h2 className="text-2xl font-bold text-center text-blue-800">Create a New Prescription</h2>
+
+          {message && (
+            <div className={`p-3 rounded text-sm font-medium ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {message.text}
+            </div>
+          )}
 
           <div>
-            <label className="block mb-1 font-medium">Patient</label>
+            <label className="block mb-1 font-semibold">Patient</label>
             <select
               value={selectedPatient}
               onChange={(e) => setSelectedPatient(e.target.value)}
               className="w-full border border-gray-300 rounded-lg p-2"
             >
-              <option value="">-- Sélectionnez un patient --</option>
+              <option value="">-- Select a patient --</option>
               {patients.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
@@ -102,13 +130,13 @@ const DoctorDashboard: React.FC = () => {
 
           <div className="flex space-x-4 items-end">
             <div className="flex-1">
-              <label className="block mb-1 font-medium">Médicament</label>
+              <label className="block mb-1 font-semibold">Medication</label>
               <select
                 value={selectedMedicament}
                 onChange={(e) => setSelectedMedicament(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg p-2"
               >
-                <option value="">-- Sélectionnez un médicament --</option>
+                <option value="">-- Select a medication --</option>
                 {medicaments.map((m) => (
                   <option key={m} value={m}>{m}</option>
                 ))}
@@ -116,7 +144,7 @@ const DoctorDashboard: React.FC = () => {
             </div>
 
             <div>
-              <label className="block mb-1 font-medium">Quantité</label>
+              <label className="block mb-1 font-semibold">Quantity</label>
               <select
                 value={selectedQuantity}
                 onChange={(e) => setSelectedQuantity(Number(e.target.value))}
@@ -130,21 +158,21 @@ const DoctorDashboard: React.FC = () => {
 
             <button
               onClick={handleAdd}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
             >
-              Ajouter
+              Add
             </button>
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold mb-2">Médicaments ajoutés :</h3>
+            <h3 className="text-lg font-semibold mb-2">Added Medications:</h3>
             {prescriptions.length === 0 ? (
-              <p className="text-gray-500">Aucun médicament ajouté</p>
+              <p className="text-gray-500 italic">No medication added yet</p>
             ) : (
               <ul className="list-disc pl-5 space-y-1">
                 {prescriptions.map((item, index) => (
                   <li key={index}>
-                    {item.medicament} — Quantité : {item.quantity}
+                    {item.medicament} — Quantity: {item.quantity}
                   </li>
                 ))}
               </ul>
@@ -153,9 +181,9 @@ const DoctorDashboard: React.FC = () => {
 
           <button
             onClick={handleCreatePrescription}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
           >
-            Créer l’ordonnance
+            Submit Prescription
           </button>
         </div>
       </div>
@@ -166,16 +194,16 @@ const DoctorDashboard: React.FC = () => {
     <div className="min-h-screen bg-gray-50 p-8">
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Dr. {doctorName}</h1>
-        <p className="text-gray-600">Gestion des patients et ordonnances</p>
+        <p className="text-gray-600">Patient and Prescription Management</p>
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         <StatCard title="Patients" value="127" icon={<FaUserInjured size={24} />} />
-        <StatCard title="Ordonnances" value="89" icon={<FaPrescriptionBottle size={24} />} />
+        <StatCard title="Prescriptions" value="89" icon={<FaPrescriptionBottle size={24} />} />
       </div>
 
       <Tabs
-        tabs={Object.keys(tabContent)}
+        tabs={Object.keys(tabContent) as TabKey[]}
         activeTab={activeTab}
         onChange={(tab) => setActiveTab(tab as TabKey)}
       />
