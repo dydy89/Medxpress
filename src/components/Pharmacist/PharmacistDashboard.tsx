@@ -60,7 +60,7 @@ const PharmacistDashboard: React.FC = () => {
 
   const renderQRCode = () => (
     <img
-      src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADIAQAAAACFI5MzAAABeUlEQVR4Xu2WQW6EMAxFP2KRJUfgJnCxkUDiYsxNOALLLBDu/wlimA5d1rQSloiSPBZW7G8b9pPh+8VuN7mJ7G+QCUA5Be0iqp6nypvwGyzbWg1avAk9GiYbUVpsuENzDQnPGXV42nUEhS2w8cQ3B2KKT2BUmCsnkXMgKUdTaLh8Zu/vk2wMTV+j3c+eRKEZ9EQ8FnN3jI8b0XME06XsLT4uJKvTEmnwQCySm45ke44RqGPDcnH02odIID2LxNwpPo8tTVwJ3eqmmCoFa5XFg0qcSBipTltB38DlAhJbW+pUJHhIDjqTKahdmTpGpG/sHd4kx4cCAejgUuOlHyfC5JjLpBIwW/lOrTfRw3SpXOTGdQFhjvJyBCWazJ/IJqlEXZOl671rOhBulaNj0mmlOUq/uhLT7IJNrBLN7psX0fxmbBss2iv9fNUqVyKPel6zaypRryAUayeV5CdyJvw4OWh+y2J9zxAPAs2wpuYdla3+5NxuchPZ/yRfkTNVXCxtElQAAAAASUVORK5CYII="
+      src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADIAQAAAACFI5MzAAABfklEQVR4Xu2WS27CQBBEC7Hw0keYm8DFkGzJF3NuMkdg6YVFp2omwRMg2yKR3JIR7udFq7v6g/jN8Oi42052IvsbJAM4RnfDkJdzjHzr3YTPFAv6ETH3U8TNTuicMk445vgI/XsLCRyuSMzO+4icgRqlnYTq08V1iI7ZeaqcgUijeTkxLP48qddAilWFMLZvcxI5geXAFmWKjqqUmQSdaxJJhXT3+rgIqwLIOWSJQ5I1k+jmfk0cEmtisw5fRXKSIs/aGzU7cxO1hXBMxYpuxlDJNilcRMNpTHVknnDR2nCTUEFKq6AIdauPjczSqAZlyU4bm4dwSlOZ7NNJL9wdW+VMRI3Jo0EbA2dlp1Gvh3BXonZnrmTrYBPR1Va29Yq48Sv5vaSYZDKUUd1OSxPJ0N4ux2O5XZrKuQgfvisxOhr0jZtoTJUuqfjxijYRLe9JYa1o6uMkFKoWZlwv+DkpLCRKfbi3oXVVx7eXQBotTnbJmBqFmMhr28lOZP+TfAKPP3HqQ8ig0AAAAABJRU5ErkJggg=="
       alt="QR Code"
       className="w-24 h-24 mt-2"
     />
@@ -91,10 +91,7 @@ const PharmacistDashboard: React.FC = () => {
               <h4 className="font-semibold text-gray-800">Commande #{order.id}</h4>
               <p className="text-sm text-gray-500">Prescription ID : {order.prescriptionId}</p>
               <p className="text-sm text-gray-500">Statut : {order.status}</p>
-              <button className="mt-2 flex items-center text-sm text-blue-600 hover:underline">
-                <FaQrcode className="mr-2" />
-                Générer QR Code
-              </button>
+
               {renderQRCode()}
             </div>
           </div>
