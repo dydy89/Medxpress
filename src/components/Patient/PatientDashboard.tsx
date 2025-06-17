@@ -52,6 +52,8 @@ const PatientDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
 
   const patientId = 2;
   
@@ -151,18 +153,18 @@ const PatientDashboard: React.FC = () => {
     }
   };
 
-  const handleOrder = (prescriptionId: number) => {
-      const token = localStorage.getItem("token");
+const handleOrder = (prescriptionId: number) => {
+  const token = localStorage.getItem("token");
 
-    const request: CreateOrderRequest = {
-      prescriptionId,
-      patientId,
-      pharmacyId: 1,
-      deliveryDriverId: 1,
-    };
+  const request: CreateOrderRequest = {
+    prescriptionId,
+    patientId,
+    pharmacyId: 1,
+    deliveryDriverId: 1,
+  };
 
-axios.post(
-    'http://localhost:8080/api/order/createOrder',
+  axios.post(
+    'http://localhost:8080/api/patient/createOrder',
     request,
     {
       headers: {
@@ -172,16 +174,24 @@ axios.post(
     }
   )
 .then(response => {
-    alert('Commande créée avec succès !');
-    console.log('Commande créée :', response.data);
-    setOrderedPrescriptions(prev => [...prev, prescriptionId]);
-  })
+  setSuccessMessage("Votre commande a été passée avec succès.");
+
+  setActiveOrders(prev => ({
+    ...prev,
+    [prescriptionId]: "PENDING_DRIVER_RESPONSE"
+  }));
+
+  setOrderedPrescriptions(prev => [...prev, prescriptionId]);
+
+  // Optionnel : effacer le message après 5 secondes
+  setTimeout(() => setSuccessMessage(null), 5000);
+})
+
   .catch(error => {
     console.error('Erreur lors de la commande :', error);
     alert('Erreur lors de la création de la commande.');
   });
 };
-
 
 
   const selectedPrescription = prescriptions.find(p => p.id === selectedPrescriptionId);
@@ -197,6 +207,11 @@ axios.post(
         {!loading && !error && prescriptions.length === 0 && (
           <p>Aucune ordonnance trouvée.</p>
         )}
+      {successMessage && (
+        <div className="mb-4 p-4 bg-green-100 text-green-800 rounded-md shadow">
+          {successMessage}
+        </div>
+      )}
 
         <div className="space-y-4">
           {prescriptions.map((p) => (
