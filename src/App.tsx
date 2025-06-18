@@ -9,6 +9,7 @@ import PatientDashboard from './components/Patient/PatientDashboard';
 import DoctorDashboard from './components/Doctor/DoctorDashboard';
 import PharmacistDashboard from './components/Pharmacist/PharmacistDashboard';
 import CourierDashboard from './components/Courier/CourierDashboard';
+import VerifyOrderCode from './components/Order/VerifyOrderCode';
 
 const App: React.FC = () => {
   return (
@@ -19,6 +20,7 @@ const App: React.FC = () => {
       <Route path="/patient" element={<PatientDashboard />} />
       <Route path="/doctor" element={<DoctorDashboard />} />
       <Route path="/pharmacist" element={<PharmacistDashboard />} />
+      <Route path="/CheckCode" element={<VerifyOrderCode />} />
       <Route path="/courier/:driverId" element={<CourierDashboard />} />
     </Routes>
   );

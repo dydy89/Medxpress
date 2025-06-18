@@ -1,157 +1,214 @@
-import React, { useEffect, useState } from 'react';
-import { FaUserInjured, FaCalendarAlt, FaPrescriptionBottle, FaQrcode } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react'; 
+import axios from 'axios';
+import { FaUserInjured, FaPrescriptionBottle } from 'react-icons/fa';
 import { StatCard } from '../../components/StatCard';
 import { Tabs } from '../../components/Tabs';
 
-type TabKey = "Mes Patients" | "Nouvelle Ordonnance" | "Ordonnances";
+type TabKey = "My Patients" | "Prescriptions" | "New Prescription";
+
+const token = localStorage.getItem("token");
+
+type MedicamentItem = {
+  medicament: string;
+  quantity: number;
+};
 
 const DoctorDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabKey>("Nouvelle Ordonnance");
-  const [doctor, setDoctor] = useState<{ name: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<TabKey>("My Patients");
+  const [doctorName, setDoctorName] = useState("Doctor");
 
-  const [patients, setPatients] = useState<{ nom: string; prenom: string }[]>([]);
-  const [newNom, setNewNom] = useState('');
-  const [newPrenom, setNewPrenom] = useState('');
+  const [selectedPatient, setSelectedPatient] = useState("");
+  const [selectedMedicament, setSelectedMedicament] = useState("");
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [prescriptions, setPrescriptions] = useState<MedicamentItem[]>([]);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const [allPatients, setAllPatients] = useState<any[]>([]);
-  const [selectedPatientId, setSelectedPatientId] = useState("");
+  const patients = [
+    { id: 2, name: "John Smith" },
+    { id: 3, name: "Marie Curie" },
+  ];
+
+  const medicaments = ["Paracetamol", "Ibuprofen", "Doliprane", "Amoxicillin"];
 
   useEffect(() => {
-    const fetchDoctor = async () => {
-      const doctorId = localStorage.getItem("id");
-      const token = localStorage.getItem("jwt");
-      if (!doctorId || !token) return;
+    if (!token) {
+      console.warn("Missing token in localStorage.");
+      return;
+    }
 
-      try {
-        const res = await fetch(`http://localhost:8080/api/doctor/${doctorId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setDoctor(data);
-        }
-      } catch (err) {
-        console.error("Erreur récupération médecin :", err);
+    axios.get("http://localhost:8080/api/user/3", {
+      headers: {
+        Authorization: `Bearer ${token}`
       }
-    };
-
-    fetchDoctor();
+    })
+    .then((res) => {
+      const fullName = `${res.data.name} ${res.data.firstName}`;
+      setDoctorName(fullName);
+    })
+    .catch((error) => {
+      console.error("Failed to fetch doctor:", error);
+    });
   }, []);
 
- useEffect(() => {
-  fetch("http://localhost:8080/api/patient/all")
-    .then(res => res.json())
-    .then(data => {
-      console.log("👥 Noms des patients :", data);
-      setAllPatients(data);
-    })
-    .catch(err => console.error("Erreur chargement noms patients:", err));
-}, []);
+  const handleAdd = () => {
+    if (!selectedMedicament) return;
+    setPrescriptions([...prescriptions, { medicament: selectedMedicament, quantity: selectedQuantity }]);
+    setSelectedMedicament("");
+    setSelectedQuantity(1);
+  };
+
+  const handleCreatePrescription = async () => {
+    const patient = patients.find((p) => p.id.toString() === selectedPatient);
+    if (!patient || prescriptions.length === 0) {
+      setMessage({ type: 'error', text: 'Please select a patient and add at least one medication.' });
+      return;
+    }
+
+    const payload = {
+      doctorEntity: { id: 2 },
+      patient: { id: 3 },
+      medicaments: prescriptions.map((item) => ({
+        nom: item.medicament
+      })),
+    };
+
+    console.log("Payload envoyé:", JSON.stringify(payload));
+
+    try {
+      const response = await fetch("http://localhost:8080/api/prescription/addPrescription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to create prescription");
+      }
+
+      const text = await response.text();
+      setMessage({ type: 'success', text });
+      setPrescriptions([]);
+      setSelectedPatient("");
+    } catch (error) {
+      console.error("API Error:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create the prescription.';
+      setMessage({ type: 'error', text: errorMessage });
+    }
+  };
 
   const tabContent: Record<TabKey, JSX.Element> = {
-    "Mes Patients": (
-      <div className="bg-white p-6 rounded-xl shadow space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Ajouter un patient</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Nom"
-              value={newNom}
-              onChange={(e) => setNewNom(e.target.value)}
-              className="input"
-            />
-            <input
-              type="text"
-              placeholder="Prénom"
-              value={newPrenom}
-              onChange={(e) => setNewPrenom(e.target.value)}
-              className="input"
-            />
+    "My Patients": <div>Patient list goes here</div>,
+    "Prescriptions": <div>Prescription history goes here</div>,
+    "New Prescription": (
+      <div className="flex justify-center">
+        <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-lg space-y-6 border border-gray-200">
+          <h2 className="text-2xl font-bold text-center text-blue-800">Create a New Prescription</h2>
+
+          {message && (
+            <div className={`p-3 rounded text-sm font-medium ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {message.text}
+            </div>
+          )}
+
+          <div>
+            <label className="block mb-1 font-semibold">Patient</label>
+            <select
+              value={selectedPatient}
+              onChange={(e) => setSelectedPatient(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg p-2"
+            >
+              <option value="">-- Select a patient --</option>
+              {patients.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
           </div>
+
+          <div className="flex space-x-4 items-end">
+            <div className="flex-1">
+              <label className="block mb-1 font-semibold">Medication</label>
+              <select
+                value={selectedMedicament}
+                onChange={(e) => setSelectedMedicament(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg p-2"
+              >
+                <option value="">-- Select a medication --</option>
+                {medicaments.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block mb-1 font-semibold">Quantity</label>
+              <select
+                value={selectedQuantity}
+                onChange={(e) => setSelectedQuantity(Number(e.target.value))}
+                className="border border-gray-300 rounded-lg p-2"
+              >
+                {[1, 2, 3].map((q) => (
+                  <option key={q} value={q}>{q}</option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              onClick={handleAdd}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+            >
+              Add
+            </button>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Added Medications:</h3>
+            {prescriptions.length === 0 ? (
+              <p className="text-gray-500 italic">No medication added yet</p>
+            ) : (
+              <ul className="list-disc pl-5 space-y-1">
+                {prescriptions.map((item, index) => (
+                  <li key={index}>
+                    {item.medicament} — Quantity: {item.quantity}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           <button
-            onClick={() => {
-              if (newNom && newPrenom) {
-                setPatients([...patients, { nom: newNom, prenom: newPrenom }]);
-                setNewNom('');
-                setNewPrenom('');
-              } else {
-                alert("Veuillez remplir les deux champs");
-              }
-            }}
-            className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2 rounded"
+            onClick={handleCreatePrescription}
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
           >
-            Ajouter
+            Submit Prescription
           </button>
         </div>
-
-        <div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Liste des patients</h2>
-          <ul className="space-y-2">
-            {allPatients.map((patient, idx) => (
-  <option key={idx} value={patient.idPatient}>{patient.user?.name || "Nom inconnu"}</option>
-))}
-          </ul>
-        </div>
       </div>
     ),
-
-    "Ordonnances": (
-      <div className="bg-white p-6 rounded-xl shadow">
-        <h2 className="text-xl font-semibold text-gray-800">Historique des ordonnances</h2>
-        <p className="text-gray-500">À venir…</p>
-      </div>
-    ),
-
-    "Nouvelle Ordonnance": (
-      <div className="bg-white p-6 rounded-xl shadow">
-        <h2 className="text-xl font-semibold text-gray-800 mb-1">Nouvelle Ordonnance</h2>
-        <p className="text-sm text-gray-500 mb-6">Création de l'ordonnance du patient</p>
-
-        <div className="grid sm:grid-cols-2 gap-4">
-         <select
-  value={selectedPatientId}
-  onChange={(e) => setSelectedPatientId(e.target.value)}
-  className="input"
->
-  <option value="">-- Sélectionner un patient --</option>
-  {allPatients.map((name, idx) => (
-    <option key={idx} value={name}>{name}</option>
-  ))}
-</select>
-          <input type="date" className="input" />
-        </div>
-        <input type="text" placeholder="Médicaments prescrits" className="input mt-4" />
-        <input type="text" placeholder="Instructions de prise" className="input mt-4" />
-
-        <button className="mt-6 bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded flex items-center">
-          <FaQrcode className="mr-2" /> Générer Ordonnance 
-        </button>
-      </div>
-    )
   };
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       {/* En-tête médecin */}
       <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">
-          Bonjour, Dr. {doctor?.name}
-        </h1>
-        <p className="text-gray-600">Gestion des patients et ordonnances</p>
+        <h1 className="text-3xl font-bold text-gray-800">Dr. {doctorName}</h1>
+        <p className="text-gray-600">Patient and Prescription Management</p>
       </header>
 
-      {/* Statistiques */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-        <StatCard title="Patients" value={patients.length.toString()} icon={<FaUserInjured size={24} />} />
-        <StatCard title="Ordonnances" value="0" icon={<FaPrescriptionBottle size={24} />} />
-        <StatCard title="RDV Aujourd'hui" value="12" icon={<FaCalendarAlt size={24} />} />
+        <StatCard title="Patients" value="127" icon={<FaUserInjured size={24} />} />
+        <StatCard title="Prescriptions" value="89" icon={<FaPrescriptionBottle size={24} />} />
       </div>
 
-      {/* Navigation par onglets */}
-      <Tabs tabs={Object.keys(tabContent)} activeTab={activeTab} onChange={(tab) => setActiveTab(tab as TabKey)} />
-
-      {/* Contenu actif */}
+      <Tabs
+        tabs={Object.keys(tabContent) as TabKey[]}
+        activeTab={activeTab}
+        onChange={(tab) => setActiveTab(tab as TabKey)}
+      />
+      
       <div className="mt-6">
         {tabContent[activeTab]}
       </div>

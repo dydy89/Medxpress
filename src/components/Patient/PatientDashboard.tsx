@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   FaFileMedical,
   FaCube,
@@ -9,21 +10,135 @@ import {
 import { StatCard } from '../../components/StatCard';
 import { Tabs } from '../../components/Tabs';
 
-type TabKey = 'Mes Ordonnances' | 'Mes Commandes' | 'Créer Commande (QR)';
+type TabKey = 'Mes Ordonnances' | 'Ma prise de médicaments';
+
+interface CreateOrderRequest {
+  prescriptionId: number;
+  pharmacyId: number;
+  patientId: number;
+  deliveryDriverId: number;
+}
+
+interface Medicament {
+  id: number;
+  name: string;
+}
+
+interface User {
+  id: number;
+  firstName: string;
+  name: string;
+}
+
+interface Prescription {
+  id: number;
+  doctorEntity: {
+    name: string;
+  };
+  patient: {
+    name: string;
+  };
+  medicaments: Medicament[];
+  status: string;
+  date: string;
+}
 
 const PatientDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('Mes Ordonnances');
   const [selectedPrescriptionId, setSelectedPrescriptionId] = useState<number | null>(null);
+  const [orderedPrescriptions, setOrderedPrescriptions] = useState<number[]>([]);
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [activeOrders, setActiveOrders] = useState<Record<number, string>>({});
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+
+  const patientId = 2;
+  
+
+  useEffect(() => {
+  setLoading(true);
+  setError(null);
+
+  
+  const token = localStorage.getItem("token");
+  
+  console.log("aaa", token);
+  axios.get(`http://localhost:8080/api/prescription/getAll/${patientId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`  // Ajout du header Authorization
+    }
+  })
+  .then(response => {
+    setPrescriptions(response.data);
+  })
+  .catch(() => {
+    setError("");
+  })
+  .finally(() => {
+    setLoading(false);
+  });
+}, [patientId]);
+
+
+  // 🔹 Récupère les infos du patient
+  useEffect(() => {
+  const token = localStorage.getItem("token");
+
+  axios.get(`http://localhost:8080/api/user/${patientId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  })
+    .then(response => {
+      setUser(response.data);
+    })
+    .catch(error => {
+      console.error('Erreur lors de la récupération de l\'utilisateur :', error);
+    });
+}, [patientId]);
+
+
+  useEffect(() => {
+  const fetchActiveOrders = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.warn("Aucun token trouvé dans le localStorage.");
+      return;
+    }
+
+    const result: Record<number, string> = {};
+
+    await Promise.all(prescriptions.map(async (p) => {
+      try {
+        const res = await axios.get(
+          `http://localhost:8080/api/order/by-prescription/${p.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+        result[p.id] = res.data.status;
+      } catch (err) {
+        // Pas de commande active => ne rien mettre
+      }
+    }));
+
+    setActiveOrders(result);
+  };
+
+  if (prescriptions.length > 0) {
+    fetchActiveOrders();
+  }
+}, [prescriptions]);
+
 
   const handleLogout = () => {
     window.location.href = '/login';
   };
-
-  const prescriptions = [
-    { id: 1, medication: 'Doliprane 500mg', doctor: 'Dr. Alice', date: '2025-06-12', medicationCount: 3, status: 'En cours' },
-    { id: 2, medication: 'Amoxicilline', doctor: 'Dr. Bob', date: '2025-06-14', medicationCount: 2, status: 'Livré' },
-    { id: 3, medication: 'Ibuprofène', doctor: 'Dr. Laurent', date: '2025-06-10', medicationCount: 1, status: 'Préparé' },
-  ];
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -38,34 +153,94 @@ const PatientDashboard: React.FC = () => {
     }
   };
 
-  const selectedPrescription = prescriptions.find(p => p.id === selectedPrescriptionId);
+const handleOrder = (prescriptionId: number) => {
+  const token = localStorage.getItem("token");
 
-  const handleSendToDelivery = () => {
-    if (!selectedPrescriptionId) return;
-    alert(`Commande envoyée pour l'ordonnance #${selectedPrescriptionId}`);
+  const request: CreateOrderRequest = {
+    prescriptionId,
+    patientId,
+    pharmacyId: 1,
+    deliveryDriverId: 1,
   };
+
+  axios.post(
+    'http://localhost:8080/api/patient/createOrder',
+    request,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    }
+  )
+.then(response => {
+  setSuccessMessage("Votre commande a été passée avec succès.");
+
+  setActiveOrders(prev => ({
+    ...prev,
+    [prescriptionId]: "PENDING_DRIVER_RESPONSE"
+  }));
+
+  setOrderedPrescriptions(prev => [...prev, prescriptionId]);
+
+  // Optionnel : effacer le message après 5 secondes
+  setTimeout(() => setSuccessMessage(null), 5000);
+})
+
+  .catch(error => {
+    console.error('Erreur lors de la commande :', error);
+    alert('Erreur lors de la création de la commande.');
+  });
+};
+
+
+  const selectedPrescription = prescriptions.find(p => p.id === selectedPrescriptionId);
 
   const tabContent: Record<TabKey, JSX.Element> = {
     'Mes Ordonnances': (
       <div className="bg-white p-6 rounded-xl shadow">
-        <h2 className="text-lg font-semibold text-gray-800 mb-2">Ordonnances Récentes</h2>
-        <p className="text-sm text-gray-500 mb-6">Vos prescriptions médicales</p>
+        <h2 className="text-lg font-semibold text-gray-800 mb-2">Mes Ordonnances</h2>
+
+        {loading && <p>Aucune ordonnances</p>}
+        {error && <p className="text-red-600">{error}</p>}
+
+        {!loading && !error && prescriptions.length === 0 && (
+          <p>Aucune ordonnance trouvée.</p>
+        )}
+      {successMessage && (
+        <div className="mb-4 p-4 bg-green-100 text-green-800 rounded-md shadow">
+          {successMessage}
+        </div>
+      )}
 
         <div className="space-y-4">
           {prescriptions.map((p) => (
-            <div key={p.id} className="flex justify-between items-center p-4 border rounded-lg shadow-sm hover:bg-gray-50">
+            <div
+              key={p.id}
+              className="flex justify-between items-center p-4 border rounded-lg shadow-sm hover:bg-gray-50"
+            >
               <div>
-                <h3 className="font-semibold text-gray-800">{p.doctor}</h3>
-                <p className="text-sm text-gray-500">{p.date}</p>
-                <p className="text-sm text-gray-500">{p.medicationCount} médicament(s)</p>
+                <h3 className="font-semibold text-gray-800">{p.doctorEntity.name}</h3>
+                <p className="text-sm text-gray-500">ID Patient : {p.patient.name} (id: {patientId})</p>
+                <p className="text-sm text-gray-500">{p.medicaments.length} médicament(s)</p>
               </div>
               <div className="flex items-center space-x-4">
                 <span className={`text-sm px-3 py-1 rounded-full ${getStatusStyle(p.status)}`}>
                   {p.status}
                 </span>
-                <button className="bg-gray-900 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm">
-                  Commander
-                </button>
+
+                {activeOrders[p.id] ? (
+                  <span className="text-sm font-medium text-yellow-600">
+                    {activeOrders[p.id]}
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => handleOrder(p.id)}
+                    className="bg-gray-900 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm"
+                  >
+                    Commander
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -73,49 +248,9 @@ const PatientDashboard: React.FC = () => {
       </div>
     ),
 
-    'Mes Commandes': (
+    'Ma prise de médicaments': (
       <div className="bg-white p-6 rounded-xl shadow text-gray-600">
         <p>Historique des commandes à venir...</p>
-      </div>
-    ),
-
-    'Créer Commande (QR)': (
-      <div className="bg-white p-6 rounded-xl shadow text-center">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Créer une commande</h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Sélectionnez une ordonnance pour générer un QR Code à transmettre au livreur.
-        </p>
-
-        <select
-          className="border rounded p-2 w-full max-w-sm mb-4"
-          value={selectedPrescriptionId || ''}
-          onChange={(e) => setSelectedPrescriptionId(Number(e.target.value))}
-        >
-          <option value="" disabled>Choisissez une ordonnance</option>
-          {prescriptions.map(p => (
-            <option key={p.id} value={p.id}>
-              {p.doctor} - {p.medication} ({p.date})
-            </option>
-          ))}
-        </select>
-
-        {selectedPrescription && (
-          <>
-            <div className="flex justify-center mb-4">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?data=Ordonnance-${selectedPrescription.id}`}
-                alt="QR Code"
-                className="w-48 h-48"
-              />
-            </div>
-            <button
-              onClick={handleSendToDelivery}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded"
-            >
-              Envoyer la commande
-            </button>
-          </>
-        )}
       </div>
     ),
   };
@@ -124,7 +259,9 @@ const PatientDashboard: React.FC = () => {
     <div className="min-h-screen bg-gray-50 p-8">
       <header className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Bonjour, Marie Dupont</h1>
+          <h1 className="text-3xl font-bold text-gray-800">
+            Bonjour, {user ? `${user.firstName} ${user.name}` : 'X'}
+          </h1>
           <p className="text-gray-600">Gérez vos ordonnances et commandes</p>
         </div>
         <button
@@ -137,10 +274,8 @@ const PatientDashboard: React.FC = () => {
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-        <StatCard title="Ordonnances" value="3" icon={<FaFileMedical size={24} />} />
-        <StatCard title="Commandes" value="2" icon={<FaCube size={24} />} />
-        <StatCard title="En cours" value="1" icon={<FaClock size={24} />} />
-        <StatCard title="Médicaments" value="6" icon={<FaPills size={24} />} />
+        <StatCard title="Ordonnances" value={prescriptions.length.toString()} icon={<FaFileMedical size={24} />} />
+        <StatCard title="?notif?" value="nb?" icon={<FaCube size={24} />} />
       </div>
 
       <Tabs
