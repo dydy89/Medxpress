@@ -19,13 +19,17 @@ const LoginPage: React.FC = () => {
         password
       });
 
-          const token = response.data;
+    const token = response.data;
     localStorage.setItem('jwt', token);
     alert("Connexion réussie !");
 
     const decoded: any = jwtDecode(token);
     const role = decoded?.role?.toUpperCase();
+<<<<<<< Updated upstream
     localStorage.setItem('id', decoded?.id);
+=======
+    const userId = decoded?.id;
+>>>>>>> Stashed changes
     console.log("Rôle récupéré dans le token :", role);
     switch (role) {
         case 'PATIENT':
@@ -38,7 +42,7 @@ const LoginPage: React.FC = () => {
           navigate('/pharmacist');
           break;
         case 'DELIVERY_DRIVER':
-          navigate('/courier');
+          navigate(`/courier/${userId}`);
           break;
         case 'ADMIN':
           navigate('/main');
