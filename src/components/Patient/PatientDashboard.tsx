@@ -10,7 +10,7 @@ import {
 import { StatCard } from '../../components/StatCard';
 import { Tabs } from '../../components/Tabs';
 
-type TabKey = 'Mes Ordonnances' | 'Ma prise de médicaments';
+type TabKey = 'My Prescriptions' | 'My Medication Intake';
 
 interface CreateOrderRequest {
   prescriptionId: number;
@@ -21,7 +21,7 @@ interface CreateOrderRequest {
 
 interface Medicament {
   id: number;
-  name: string;
+  nom: string;
 }
 
 interface User {
@@ -44,7 +44,7 @@ interface Prescription {
 }
 
 const PatientDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabKey>('Mes Ordonnances');
+  const [activeTab, setActiveTab] = useState<TabKey>('My Prescriptions');
   const [selectedPrescriptionId, setSelectedPrescriptionId] = useState<number | null>(null);
   const [orderedPrescriptions, setOrderedPrescriptions] = useState<number[]>([]);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
@@ -54,87 +54,80 @@ const PatientDashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-
   const patientId = 2;
-  
 
   useEffect(() => {
-  setLoading(true);
-  setError(null);
+    setLoading(true);
+    setError(null);
 
-  
-  const token = localStorage.getItem("token");
-  
-  console.log("aaa", token);
-  axios.get(`http://localhost:8080/api/prescription/getAll/${patientId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`  // Ajout du header Authorization
-    }
-  })
-  .then(response => {
-    setPrescriptions(response.data);
-  })
-  .catch(() => {
-    setError("");
-  })
-  .finally(() => {
-    setLoading(false);
-  });
-}, [patientId]);
-
-
-  // 🔹 Récupère les infos du patient
-  useEffect(() => {
-  const token = localStorage.getItem("token");
-
-  axios.get(`http://localhost:8080/api/user/${patientId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  })
-    .then(response => {
-      setUser(response.data);
-    })
-    .catch(error => {
-      console.error('Erreur lors de la récupération de l\'utilisateur :', error);
-    });
-}, [patientId]);
-
-
-  useEffect(() => {
-  const fetchActiveOrders = async () => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      console.warn("Aucun token trouvé dans le localStorage.");
-      return;
-    }
 
-    const result: Record<number, string> = {};
-
-    await Promise.all(prescriptions.map(async (p) => {
-      try {
-        const res = await axios.get(
-          `http://localhost:8080/api/order/by-prescription/${p.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        );
-        result[p.id] = res.data.status;
-      } catch (err) {
-        // Pas de commande active => ne rien mettre
+    axios.get(`http://localhost:8080/api/prescription/getAll/${patientId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
       }
-    }));
+    })
+    .then(response => {
+      setPrescriptions(response.data);
+    })
+    .catch(() => {
+      setError("");
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+  }, [patientId]);
 
-    setActiveOrders(result);
-  };
+  // 🔹 Fetch patient information
+  useEffect(() => {
+    const token = localStorage.getItem("token");
 
-  if (prescriptions.length > 0) {
-    fetchActiveOrders();
-  }
-}, [prescriptions]);
+    axios.get(`http://localhost:8080/api/user/${patientId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+      .then(response => {
+        setUser(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching user:', error);
+      });
+  }, [patientId]);
 
+  useEffect(() => {
+    const fetchActiveOrders = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.warn("No token found in localStorage.");
+        return;
+      }
+
+      const result: Record<number, string> = {};
+
+      await Promise.all(prescriptions.map(async (p) => {
+        try {
+          const res = await axios.get(
+            `http://localhost:8080/api/order/by-prescription/${p.id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            }
+          );
+          result[p.id] = res.data.status;
+        } catch (err) {
+          // No active order => skip
+        }
+      }));
+
+      setActiveOrders(result);
+    };
+
+    if (prescriptions.length > 0) {
+      fetchActiveOrders();
+    }
+  }, [prescriptions]);
 
   const handleLogout = () => {
     window.location.href = '/login';
@@ -153,65 +146,62 @@ const PatientDashboard: React.FC = () => {
     }
   };
 
-const handleOrder = (prescriptionId: number) => {
-  const token = localStorage.getItem("token");
+  const handleOrder = (prescriptionId: number) => {
+    const token = localStorage.getItem("token");
 
-  const request: CreateOrderRequest = {
-    prescriptionId,
-    patientId,
-    pharmacyId: 1,
-    deliveryDriverId: 1,
-  };
+    const request: CreateOrderRequest = {
+      prescriptionId,
+      patientId,
+      pharmacyId: 1,
+      deliveryDriverId: 1,
+    };
 
-  axios.post(
-    'http://localhost:8080/api/patient/createOrder',
-    request,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
+    axios.post(
+      'http://localhost:8080/api/patient/createOrder',
+      request,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       }
-    }
-  )
-.then(response => {
-  setSuccessMessage("Votre commande a été passée avec succès.");
+    )
+    .then(response => {
+      setSuccessMessage("Your order has been successfully placed.");
 
-  setActiveOrders(prev => ({
-    ...prev,
-    [prescriptionId]: "PENDING_DRIVER_RESPONSE"
-  }));
+      setActiveOrders(prev => ({
+        ...prev,
+        [prescriptionId]: "PENDING_DRIVER_RESPONSE"
+      }));
 
-  setOrderedPrescriptions(prev => [...prev, prescriptionId]);
+      setOrderedPrescriptions(prev => [...prev, prescriptionId]);
 
-  // Optionnel : effacer le message après 5 secondes
-  setTimeout(() => setSuccessMessage(null), 5000);
-})
-
-  .catch(error => {
-    console.error('Erreur lors de la commande :', error);
-    alert('Erreur lors de la création de la commande.');
-  });
-};
-
+      setTimeout(() => setSuccessMessage(null), 5000);
+    })
+    .catch(error => {
+      console.error('Error creating order:', error);
+      alert('Error creating order.');
+    });
+  };
 
   const selectedPrescription = prescriptions.find(p => p.id === selectedPrescriptionId);
 
   const tabContent: Record<TabKey, JSX.Element> = {
-    'Mes Ordonnances': (
+    'My Prescriptions': (
       <div className="bg-white p-6 rounded-xl shadow">
-        <h2 className="text-lg font-semibold text-gray-800 mb-2">Mes Ordonnances</h2>
+        <h2 className="text-lg font-semibold text-gray-800 mb-2">My Prescriptions</h2>
 
-        {loading && <p>Aucune ordonnances</p>}
+        {loading && <p>No prescriptions</p>}
         {error && <p className="text-red-600">{error}</p>}
 
         {!loading && !error && prescriptions.length === 0 && (
-          <p>Aucune ordonnance trouvée.</p>
+          <p>No prescription found.</p>
         )}
-      {successMessage && (
-        <div className="mb-4 p-4 bg-green-100 text-green-800 rounded-md shadow">
-          {successMessage}
-        </div>
-      )}
+        {successMessage && (
+          <div className="mb-4 p-4 bg-green-100 text-green-800 rounded-md shadow">
+            {successMessage}
+          </div>
+        )}
 
         <div className="space-y-4">
           {prescriptions.map((p) => (
@@ -221,8 +211,9 @@ const handleOrder = (prescriptionId: number) => {
             >
               <div>
                 <h3 className="font-semibold text-gray-800">{p.doctorEntity.name}</h3>
-                <p className="text-sm text-gray-500">ID Patient : {p.patient.name} (id: {patientId})</p>
-                <p className="text-sm text-gray-500">{p.medicaments.length} médicament(s)</p>
+                <p className="text-sm text-gray-500">
+                  {p.medicaments.map(m => m.nom).join(', ')}
+                </p>
               </div>
               <div className="flex items-center space-x-4">
                 <span className={`text-sm px-3 py-1 rounded-full ${getStatusStyle(p.status)}`}>
@@ -238,7 +229,7 @@ const handleOrder = (prescriptionId: number) => {
                     onClick={() => handleOrder(p.id)}
                     className="bg-gray-900 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm"
                   >
-                    Commander
+                    Order
                   </button>
                 )}
               </div>
@@ -248,9 +239,9 @@ const handleOrder = (prescriptionId: number) => {
       </div>
     ),
 
-    'Ma prise de médicaments': (
+    'My Medication Intake': (
       <div className="bg-white p-6 rounded-xl shadow text-gray-600">
-        <p>Historique des commandes à venir...</p>
+        <p>Upcoming order history...</p>
       </div>
     ),
   };
@@ -260,22 +251,21 @@ const handleOrder = (prescriptionId: number) => {
       <header className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">
-            Bonjour, {user ? `${user.firstName} ${user.name}` : 'X'}
+            Hello, {user ? `${user.firstName} ${user.name}` : 'X'}
           </h1>
-          <p className="text-gray-600">Gérez vos ordonnances et commandes</p>
+          <p className="text-gray-600">Manage your prescriptions and orders</p>
         </div>
         <button
           onClick={handleLogout}
           className="flex items-center text-red-600 hover:text-red-800 font-medium"
         >
           <FaSignOutAlt className="mr-2" />
-          Se déconnecter
+          Logout
         </button>
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-        <StatCard title="Ordonnances" value={prescriptions.length.toString()} icon={<FaFileMedical size={24} />} />
-        <StatCard title="?notif?" value="nb?" icon={<FaCube size={24} />} />
+        <StatCard title="Prescriptions" value={prescriptions.length.toString()} icon={<FaFileMedical size={24} />} />
       </div>
 
       <Tabs
