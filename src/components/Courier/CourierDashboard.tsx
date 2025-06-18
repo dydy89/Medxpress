@@ -21,6 +21,7 @@ const CourierDashboard = () => {
   const { driverId } = useParams<{ driverId: string }>();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentOrder, setCurrentOrder] = useState<Notification['order'] | null>(null);
+  const [isAccepted, setIsAccepted] = useState(false);
   const navigate = useNavigate();
 
   const loadNotifications = async () => {
@@ -57,7 +58,7 @@ const CourierDashboard = () => {
   const handleAccept = async (orderId: number) => {
     try {
       const token = localStorage.getItem('jwt');
-      await fetch(
+      const res = await fetch(
         `http://localhost:8080/api/deliveryDriver/${orderId}/accept`,
         {
           method: 'POST',
@@ -67,12 +68,21 @@ const CourierDashboard = () => {
           },
         }
       );
-      alert('Commande acceptée');
-      loadNotifications();
+
+      if (res.status === 200) {
+        alert('Commande acceptée');
+        setIsAccepted(true);
+        loadNotifications();
+      } else {
+        alert('Erreur lors de l’acceptation');
+      }
     } catch (err) {
       console.error('Erreur lors de l’acceptation', err);
     }
   };
+
+
+
 
   const handleRefuse = async (orderId: number) => {
     try {
@@ -114,12 +124,19 @@ const CourierDashboard = () => {
             {new Date(notif.createdAt).toLocaleString()}
           </p>
           <div className="flex space-x-4 mt-2">
+
             <button
               onClick={() => handleAccept(notif.order.id)}
-              className="flex items-center bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+              disabled={isAccepted}
+              className={`flex items-center px-4 py-2 rounded ${isAccepted
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-green-500 hover:bg-green-600 text-white'
+                }`}
             >
-              <FaMapMarkedAlt className="mr-2" /> Accepter
+              <FaMapMarkedAlt className="mr-2" />
+              {isAccepted ? 'Acceptée' : 'Accepter'}
             </button>
+
             <button
               onClick={() => handleRefuse(notif.order.id)}
               className="flex items-center bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
