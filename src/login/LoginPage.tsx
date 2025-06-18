@@ -23,7 +23,7 @@ const LoginPage: React.FC = () => {
       });
 
     const token = response.data;
-    localStorage.setItem('jwt', token);
+    localStorage.setItem("token", token);
     setMessage({ text: "Login successful! Redirecting...", type: 'success' });
 
     const decoded: any = jwtDecode(token);

@@ -27,7 +27,7 @@ const CourierDashboard = () => {
   const loadNotifications = async () => {
     if (!driverId) return;
 
-    const token = localStorage.getItem('jwt');
+    const token = localStorage.getItem('token');
     if (!token) {
       console.error("Aucun token trouvé pour l'authentification.");
       return;
@@ -57,7 +57,7 @@ const CourierDashboard = () => {
 
   const handleAccept = async (orderId: number) => {
     try {
-      const token = localStorage.getItem('jwt');
+      const token = localStorage.getItem('token');
       const res = await fetch(
         `http://localhost:8080/api/deliveryDriver/${orderId}/accept`,
         {
@@ -86,7 +86,7 @@ const CourierDashboard = () => {
 
   const handleRefuse = async (orderId: number) => {
     try {
-      const token = localStorage.getItem('jwt');
+      const token = localStorage.getItem('token');
 
       await fetch(
         `http://localhost:8080/api/deliveryDriver/${orderId}/refuse`,
