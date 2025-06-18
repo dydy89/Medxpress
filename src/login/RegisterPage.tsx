@@ -5,6 +5,9 @@ import { FiMail, FiLock, FiUser, FiAlertCircle, FiCheckCircle, FiTruck, FiBriefc
 
 const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [firstname, setFirstname] = useState('');
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
@@ -65,6 +68,7 @@ const RegisterPage: React.FC = () => {
           password: password,
           role: roleMapping[selectedRole],
           kbisNumber: selectedRole === 'courier' ? kbisNumber : undefined
+
         });
 
         setMessage({ text: "Account created successfully! Redirecting to login...", type: 'success' });
@@ -119,6 +123,33 @@ const RegisterPage: React.FC = () => {
               />
             </div>
           </div>
+          <div>
+          <label htmlFor="firstname" className="block text-sm font-medium text-gray-700">
+          Prénom
+         </label>
+          <input
+          id="firstname"
+          type="text"
+          value={firstname}
+          onChange={e => setFirstname(e.target.value)}
+          required
+          className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+
+<div>
+  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+    Nom
+  </label>
+  <input
+    id="name"
+    type="text"
+    value={name}
+    onChange={e => setName(e.target.value)}
+    required
+    className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+  />
+</div>
 
           <div className="space-y-1">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">

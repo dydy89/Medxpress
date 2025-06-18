@@ -192,6 +192,7 @@ const DoctorDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
+      {/* En-tête médecin */}
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Dr. {doctorName}</h1>
         <p className="text-gray-600">Patient and Prescription Management</p>
@@ -207,7 +208,7 @@ const DoctorDashboard: React.FC = () => {
         activeTab={activeTab}
         onChange={(tab) => setActiveTab(tab as TabKey)}
       />
-
+      
       <div className="mt-6">
         {tabContent[activeTab]}
       </div>
