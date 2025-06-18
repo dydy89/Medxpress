@@ -25,11 +25,8 @@ const LoginPage: React.FC = () => {
 
     const decoded: any = jwtDecode(token);
     const role = decoded?.role?.toUpperCase();
-<<<<<<< Updated upstream
     localStorage.setItem('id', decoded?.id);
-=======
     const userId = decoded?.id;
->>>>>>> Stashed changes
     console.log("Rôle récupéré dans le token :", role);
     switch (role) {
         case 'PATIENT':
