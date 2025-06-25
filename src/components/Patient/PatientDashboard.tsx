@@ -1,3 +1,4 @@
+import { jwtDecode } from 'jwt-decode';
 import React, { useEffect, useState } from 'react';
 import {
   FaClock,
@@ -11,8 +12,62 @@ import {
 import { StatCard } from '../../components/StatCard';
 import { Tabs } from '../../components/Tabs';
 import { Doctor, PrescriptionResponse, prescriptionService, User, userService } from '../../services/api';
+import AuthService from '../../services/auth';
 
 type TabKey = 'Mes Ordonnances' | 'Mes Commandes' | 'Créer Commande (QR)';
+
+// Debug component to show current authentication state
+const AuthDebugInfo: React.FC = () => {
+  const [tokenInfo, setTokenInfo] = useState<any>(null);
+  
+  useEffect(() => {
+    const token = localStorage.getItem('jwt');
+    const userId = localStorage.getItem('id');
+    
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setTokenInfo({
+          token: token.substring(0, 20) + '...',
+          decoded,
+          userId,
+          authValidation: AuthService.validateRole('PATIENT')
+        });
+      } catch (err) {
+        setTokenInfo({ error: 'Invalid token', userId });
+      }
+    } else {
+      setTokenInfo({ error: 'No token found', userId });
+    }
+  }, []);
+
+  if (!tokenInfo) return null;
+
+  return (
+    <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <h3 className="font-semibold text-blue-800 mb-2">🔐 Authentication Debug Info</h3>
+      <div className="text-sm text-blue-700 space-y-1">
+        <p><strong>Token:</strong> {tokenInfo.token || 'None'}</p>
+        <p><strong>User ID (localStorage):</strong> {tokenInfo.userId || 'None'}</p>
+        {tokenInfo.decoded && (
+          <>
+            <p><strong>Token Role:</strong> {tokenInfo.decoded.role || 'Not found'}</p>
+            <p><strong>Token Email:</strong> {tokenInfo.decoded.sub || 'Not found'}</p>
+            <p><strong>Token Exp:</strong> {new Date((tokenInfo.decoded.exp || 0) * 1000).toLocaleString()}</p>
+          </>
+        )}
+        {tokenInfo.authValidation && (
+          <>
+            <p><strong>Auth Valid:</strong> {tokenInfo.authValidation.isValid ? '✅' : '❌'}</p>
+            <p><strong>Auth Role:</strong> {tokenInfo.authValidation.tokenRole || 'None'}</p>
+            <p><strong>Auth User ID:</strong> {tokenInfo.authValidation.userId || 'None'}</p>
+          </>
+        )}
+        {tokenInfo.error && <p className="text-red-600"><strong>Error:</strong> {tokenInfo.error}</p>}
+      </div>
+    </div>
+  );
+};
 
 const PatientDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('Mes Ordonnances');
@@ -24,9 +79,50 @@ const PatientDashboard: React.FC = () => {
   const [creatingOrder, setCreatingOrder] = useState<number | null>(null);
 
   const handleLogout = () => {
-    localStorage.removeItem('jwt');
-    localStorage.removeItem('id');
-    window.location.href = '/';
+    AuthService.logout();
+  };
+
+  // Comprehensive token validation
+  const validatePatientAccess = (): { isValid: boolean; userId: number; error?: string } => {
+    console.log("🔐 COMPREHENSIVE PATIENT ACCESS VALIDATION:");
+    
+    // Step 1: Check if token exists
+    const token = localStorage.getItem('jwt');
+    if (!token) {
+      console.error("❌ No JWT token found");
+      return { isValid: false, userId: 0, error: "No authentication token" };
+    }
+    
+    // Step 2: Decode and validate token
+    let decoded: any;
+    try {
+      decoded = jwtDecode(token);
+      console.log("🔍 Token decoded:", decoded);
+    } catch (err) {
+      console.error("❌ Invalid token format:", err);
+      return { isValid: false, userId: 0, error: "Invalid token format" };
+    }
+    
+    // Step 3: Check token role
+    const tokenRole = decoded?.role?.toUpperCase();
+    console.log("🎭 Token role:", tokenRole);
+    
+    if (tokenRole !== 'PATIENT') {
+      console.error(`❌ Wrong role. Expected PATIENT, got: ${tokenRole}`);
+      return { isValid: false, userId: 0, error: `Access denied. Role: ${tokenRole}` };
+    }
+    
+    // Step 4: Validate using AuthService
+    const authValidation = AuthService.validateRole('PATIENT');
+    console.log("🔍 AuthService validation:", authValidation);
+    
+    if (!authValidation.isValid || !authValidation.userId) {
+      console.error("❌ AuthService validation failed:", authValidation);
+      return { isValid: false, userId: 0, error: "AuthService validation failed" };
+    }
+    
+    console.log("✅ All validations passed. Patient access granted.");
+    return { isValid: true, userId: authValidation.userId };
   };
 
   // Get patient info and prescriptions
@@ -36,48 +132,50 @@ const PatientDashboard: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // Get user ID from localStorage (stored as 'id')
-        const userId = localStorage.getItem('id');
+        // Comprehensive validation
+        const accessValidation = validatePatientAccess();
         
-        if (!userId) {
-          setError('User ID not found in localStorage. Please login again.');
-          return;
-        }
-        
-        if (userId === 'undefined' || userId === 'null') {
-          setError(`Invalid user ID in localStorage: "${userId}". Please login again.`);
+        if (!accessValidation.isValid) {
+          setError(`Access denied: ${accessValidation.error}`);
+          console.error("🚫 Patient access denied, logging out...");
+          AuthService.logout();
           return;
         }
 
-        const numericUserId = parseInt(userId);
-        
-        if (isNaN(numericUserId)) {
-          setError(`Cannot convert user ID to number: "${userId}". Please clear your browser data and login again.`);
-          return;
-        }
+        const userId = accessValidation.userId;
 
-        // Load user info and validate they are a patient
-        const userInfo = await userService.getCurrentUser(numericUserId);
+        console.log("🔍 PATIENT DASHBOARD - Final validation:");
+        console.log("- Access granted for user ID:", userId);
+
+        // Load user info and triple-check role from backend
+        const userInfo = await userService.getCurrentUser(userId);
         
-        // Validate user has PATIENT role
+        // Final backend validation
         if (userInfo.role !== 'PATIENT') {
-          setError(`Access denied. This dashboard is for patients only. Your role: ${userInfo.role}`);
+          setError(`Backend role mismatch. Expected PATIENT, got: ${userInfo.role}. Please contact support.`);
+          console.error("🚫 Backend role mismatch, logging out...");
+          AuthService.logout();
           return;
         }
 
-        // Load prescriptions for this patient (using userId as patientId)
-        const prescriptionsData = await prescriptionService.getEnhancedPrescriptions(numericUserId);
+        // Load prescriptions for this patient
+        const prescriptionsData = await prescriptionService.getEnhancedPrescriptions(userId);
 
         setUser(userInfo);
         setPrescriptions(prescriptionsData);
+
+        console.log("✅ PATIENT DASHBOARD - Data loaded successfully:");
+        console.log("- User:", userInfo);
+        console.log("- Prescriptions count:", prescriptionsData.length);
         
       } catch (err: any) {
         console.error('Error loading patient data:', err);
         if (err.status === 403) {
-          setError('Access denied. Please ensure you have patient privileges.');
+          setError('Access denied. Please ensure you have patient privileges and are logged in correctly.');
+          AuthService.logout();
         } else if (err.status === 401) {
           setError('Authentication failed. Please login again.');
-          handleLogout();
+          AuthService.logout();
         } else {
           setError(err.message || 'Failed to load patient data');
         }
@@ -137,22 +235,63 @@ const PatientDashboard: React.FC = () => {
   };
 
   const handleCreateOrder = async (prescriptionId: number) => {
-    const userId = localStorage.getItem('id');
-    if (!userId) return;
+    console.log("🚀 ORDER CREATION - Starting comprehensive validation...");
+    
+    // Re-validate patient access before order creation
+    const accessValidation = validatePatientAccess();
+    
+    if (!accessValidation.isValid) {
+      alert(`Authentication error: ${accessValidation.error}`);
+      console.error("🚫 Order creation blocked - authentication failed");
+      AuthService.logout();
+      return;
+    }
+
+    const userId = accessValidation.userId;
 
     try {
       setCreatingOrder(prescriptionId);
-      // Pass userId as the second parameter (backend expects patientId but we send userId)
-      await prescriptionService.createOrder(prescriptionId, parseInt(userId));
+      
+      console.log("🔍 ORDER CREATION - Final debug info:");
+      console.log("- Validation result:", accessValidation);
+      console.log("- User ID (PATIENT):", userId);
+      console.log("- Prescription ID:", prescriptionId);
+      console.log("- JWT token exists:", !!localStorage.getItem('jwt'));
+      console.log("- Token is for PATIENT role: ✅");
+      
+      // Create order with validated PATIENT token
+      await prescriptionService.createOrder(prescriptionId, userId);
       
       // Refresh prescriptions to get updated order status
-      const updatedPrescriptions = await prescriptionService.getEnhancedPrescriptions(parseInt(userId));
+      const updatedPrescriptions = await prescriptionService.getEnhancedPrescriptions(userId);
       setPrescriptions(updatedPrescriptions);
       
       alert('Order created successfully!');
+      console.log("✅ Order creation successful");
+      
     } catch (err: any) {
-      console.error('Error creating order:', err);
-      alert(err.message || 'Failed to create order');
+      console.error('❌ Error creating order - COMPREHENSIVE DEBUG:', err);
+      console.error('- Error message:', err.message);
+      console.error('- Error status:', err.status);
+      console.error('- Access validation:', accessValidation);
+      console.error('- Current token role:', localStorage.getItem('jwt') ? jwtDecode(localStorage.getItem('jwt')!) : 'No token');
+      
+      // Handle specific error cases
+      if (err.status === 403) {
+        // This should not happen with our validation, but if it does:
+        console.error("🚨 CRITICAL: 403 error despite PATIENT token validation!");
+        console.error("🚨 This indicates a backend configuration issue!");
+        
+        alert('Order creation failed: Access denied despite valid patient authentication. This is a backend configuration issue - please contact support.');
+      } else if (err.status === 401) {
+        alert('Authentication failed. Please log in again.');
+        AuthService.logout();
+        return;
+      } else {
+        const errorMessage = err.message || 'Failed to create order';
+        const statusInfo = err.status ? ` (Status: ${err.status})` : '';
+        alert(`${errorMessage}${statusInfo}`);
+      }
     } finally {
       setCreatingOrder(null);
     }
@@ -384,6 +523,9 @@ const PatientDashboard: React.FC = () => {
 
   return (
     <div className="p-8 min-h-screen bg-gray-50">
+      {/* Debug component - remove this in production */}
+      <AuthDebugInfo />
+      
       <header className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">

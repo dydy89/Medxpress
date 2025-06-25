@@ -16,6 +16,17 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  // Enhanced logging for order creation requests
+  if (config.url?.includes('/api/patient/orders') && config.method === 'post') {
+    console.log("🚀 INTERCEPTOR - Order Request Debug:");
+    console.log("- URL:", config.url);
+    console.log("- Method:", config.method);
+    console.log("- Headers:", config.headers);
+    console.log("- Data being sent:", config.data);
+    console.log("- Full config:", config);
+  }
+  
   return config;
 });
 
@@ -104,12 +115,60 @@ export const prescriptionService = {
   // Note: patientId is actually userId where user.role = "PATIENT"
   createOrder: async (prescriptionId: number, userId: number): Promise<any> => {
     try {
-      const response = await api.post('/api/patient/orders', {
+      const requestData = {
         prescriptionId,
         patientId: userId, // Backend expects patientId but we pass userId
-      });
+        // Adding optional fields that backend might expect
+        deliveryDriverId: 1, // Default delivery driver
+        pharmacyId: 1 // Default pharmacy
+      };
+      
+      // Get current token for debugging
+      const token = localStorage.getItem('jwt');
+      
+      console.log("🔍 API createOrder ENHANCED DEBUG:");
+      console.log("- Endpoint: POST /api/patient/orders");
+      console.log("- Request data:", requestData);
+      console.log("- Full URL:", `${BASE_URL}/api/patient/orders`);
+      console.log("- Token exists:", !!token);
+      console.log("- Token length:", token?.length || 0);
+      console.log("- Token preview:", token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
+      console.log("- Request headers will include:");
+      console.log("  - Authorization: Bearer [token]");
+      console.log("  - Content-Type: application/json");
+      
+      // Make the request
+      console.log("📤 Making API request...");
+      const response = await api.post('/api/patient/orders', requestData);
+      
+      console.log("✅ Order creation successful:");
+      console.log("- Response status:", response.status);
+      console.log("- Response data:", response.data);
       return response.data;
     } catch (error: any) {
+      console.error("❌ API createOrder ENHANCED ERROR DEBUG:");
+      console.error("- Error type:", error.constructor.name);
+      console.error("- Status:", error.response?.status);
+      console.error("- Status text:", error.response?.statusText);
+      console.error("- Response headers:", error.response?.headers);
+      console.error("- Response data:", error.response?.data);
+      console.error("- Request config:", {
+        url: error.config?.url,
+        method: error.config?.method,
+        headers: error.config?.headers,
+        data: error.config?.data
+      });
+      console.error("- Full error object:", error);
+      
+      // Check if it's specifically a 403 authentication issue
+      if (error.response?.status === 403) {
+        console.error("🚫 403 FORBIDDEN - Detailed Analysis:");
+        console.error("- This means the server understood the request but refuses to authorize it");
+        console.error("- Token was likely received but doesn't have proper permissions");
+        console.error("- Check if the backend endpoint requires specific role/permissions");
+        console.error("- Verify backend Spring Security configuration for /api/patient/orders");
+      }
+      
       throw new ApiError({
         message: error.response?.data?.message || 'Failed to create order',
         status: error.response?.status || 500,
