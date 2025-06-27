@@ -78,6 +78,51 @@ export interface User {
   role: 'PATIENT' | 'ADMIN' | 'DOCTOR' | 'PHARMACIST';
 }
 
+// Pharmacist-specific interfaces
+export interface PharmacistDashboardStats {
+  totalOrders: number;
+  pendingOrders: number;
+  preparingOrders: number;
+  readyOrders: number;
+  dispatchedOrders: number;
+}
+
+export interface PharmacistOrderPatient {
+  email: string;
+  firstName: string;
+}
+
+export interface PharmacistOrderMedicament {
+  nom: string;
+}
+
+export interface PharmacistOrderPrescription {
+  id: number;
+  doctor: {
+    email: string;
+  };
+  medicaments: PharmacistOrderMedicament[];
+}
+
+export interface PharmacistOrderPharmacy {
+  name: string;
+  address: string;
+}
+
+export interface PharmacistOrder {
+  id: number;
+  status: 'PENDING' | 'PREPARING' | 'READY' | 'DISPATCHED';
+  date: string;
+  code: string;
+  patient: PharmacistOrderPatient;
+  prescription: PharmacistOrderPrescription;
+  pharmacy: PharmacistOrderPharmacy;
+}
+
+export interface UpdateOrderStatusRequest {
+  status: 'PENDING' | 'PREPARING' | 'READY' | 'DISPATCHED';
+}
+
 export interface CreateOrderRequest {
   prescriptionId: number;
   patientId: number; // Actually userId where role = "PATIENT"
@@ -184,6 +229,88 @@ export const prescriptionService = {
 };
 
 // User service to get current user info from user table
+// Pharmacist service for all pharmacist-related API calls
+export const pharmacistService = {
+  // Get dashboard statistics
+  getDashboardStats: async (): Promise<PharmacistDashboardStats> => {
+    try {
+      const response = await api.get('/api/pharmacist/dashboard/stats');
+      return response.data;
+    } catch (error: any) {
+      throw new ApiError({
+        message: error.response?.data?.message || 'Failed to fetch dashboard stats',
+        status: error.response?.status || 500,
+      });
+    }
+  },
+
+  // Get all orders (optionally filtered by status)
+  getOrders: async (status?: string): Promise<PharmacistOrder[]> => {
+    try {
+      const url = status ? `/api/pharmacist/orders?status=${status}` : '/api/pharmacist/orders';
+      const response = await api.get(url);
+      return response.data;
+    } catch (error: any) {
+      throw new ApiError({
+        message: error.response?.data?.message || 'Failed to fetch orders',
+        status: error.response?.status || 500,
+      });
+    }
+  },
+
+  // Get specific order details
+  getOrderDetails: async (orderId: number): Promise<PharmacistOrder> => {
+    try {
+      const response = await api.get(`/api/pharmacist/orders/${orderId}`);
+      return response.data;
+    } catch (error: any) {
+      throw new ApiError({
+        message: error.response?.data?.message || 'Failed to fetch order details',
+        status: error.response?.status || 500,
+      });
+    }
+  },
+
+  // Update order status
+  updateOrderStatus: async (orderId: number, status: 'PENDING' | 'PREPARING' | 'READY' | 'DISPATCHED'): Promise<any> => {
+    try {
+      const response = await api.put(`/api/pharmacist/orders/${orderId}/status`, { status });
+      return response.data;
+    } catch (error: any) {
+      throw new ApiError({
+        message: error.response?.data?.message || 'Failed to update order status',
+        status: error.response?.status || 500,
+      });
+    }
+  },
+
+  // Get prescription details
+  getPrescriptionDetails: async (prescriptionId: number): Promise<any> => {
+    try {
+      const response = await api.get(`/api/pharmacist/prescriptions/${prescriptionId}`);
+      return response.data;
+    } catch (error: any) {
+      throw new ApiError({
+        message: error.response?.data?.message || 'Failed to fetch prescription details',
+        status: error.response?.status || 500,
+      });
+    }
+  },
+
+  // Get pharmacist profile
+  getPharmacistProfile: async (): Promise<User> => {
+    try {
+      const response = await api.get('/api/pharmacist/profile');
+      return response.data;
+    } catch (error: any) {
+      throw new ApiError({
+        message: error.response?.data?.message || 'Failed to fetch pharmacist profile',
+        status: error.response?.status || 500,
+      });
+    }
+  },
+};
+
 export const userService = {
   getCurrentUser: async (userId: number): Promise<User> => {
     try {
