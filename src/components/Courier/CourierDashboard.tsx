@@ -1,170 +1,175 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { FaMapMarkedAlt, FaTimesCircle } from 'react-icons/fa';
-import axios from 'axios';
+import { FaSignOutAlt, FaBell, FaCheck, FaTimes } from 'react-icons/fa';
 
 type Notification = {
   id: number;
   message: string;
   createdAt: string;
-  order: {
-    id: number;
-    pharmacy: {
-      address: string;
-      latitude: number;
-      longitude: number;
-    };
-  };
+  read: boolean;
+  status?: 'accepted' | 'refused' | null;
+  orderId: number;
 };
 
 const CourierDashboard = () => {
-  const { driverId } = useParams<{ driverId: string }>();
+  const [driverId, setDriverId] = useState<number | null>(null);
+  const [message, setMessage] = useState<{ type: string; text: string } | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [currentOrder, setCurrentOrder] = useState<Notification['order'] | null>(null);
-  const [isAccepted, setIsAccepted] = useState(false);
-  const navigate = useNavigate();
-
-  const loadNotifications = async () => {
-    if (!driverId) return;
-
-    const token = localStorage.getItem('jwt');
-    if (!token) {
-      console.error("Aucun token trouvé pour l'authentification.");
-      return;
-    }
-
-    try {
-      const res = await fetch(
-        `http://localhost:8080/api/deliveryDriver/notifications/${driverId}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
-      const data: Notification[] = await res.json();
-      setNotifications(data);
-      if (data.length > 0) {
-        setCurrentOrder(data[0].order);
-      }
-    } catch (err) {
-      console.error('Erreur lors du chargement des notifications', err);
-    }
-  };
-
-
-  const handleAccept = async (orderId: number) => {
-    try {
-      const token = localStorage.getItem('jwt');
-      const res = await fetch(
-        `http://localhost:8080/api/deliveryDriver/${orderId}/accept`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (res.status === 200) {
-        alert('Commande acceptée');
-        setIsAccepted(true);
-        loadNotifications();
-      } else {
-        alert('Erreur lors de l’acceptation');
-      }
-    } catch (err) {
-      console.error('Erreur lors de l’acceptation', err);
-    }
-  };
-
-
-
-
-  const handleRefuse = async (orderId: number) => {
-    try {
-      const token = localStorage.getItem('jwt');
-
-      await fetch(
-        `http://localhost:8080/api/deliveryDriver/${orderId}/refuse`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
-      alert('Commande refusée');
-      loadNotifications();
-    } catch (err) {
-      console.error('Erreur lors du refus', err);
-    }
-  };
 
   useEffect(() => {
-    if (!driverId) {
-      alert('Identifiant livreur manquant.');
-      navigate('/');
-    } else {
-      loadNotifications();
+    const storedId = localStorage.getItem('id');
+    const id = parseInt(storedId ?? '', 10);
+    if (!isNaN(id)) {
+      setDriverId(id);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (driverId) {
+      fetch(`http://localhost:8080/api/notifications/${driverId}`)
+        .then((res) => res.json())
+        .then((data: Notification[]) => {
+          console.log('Received notifications:', data);
+          setNotifications(data);
+        })
+        .catch(() => {
+          setMessage({ type: 'error', text: 'Error loading notifications.' });
+        });
     }
   }, [driverId]);
 
+  const handleAccept = async (orderId: number) => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/order/${orderId}/accept`, {
+        method: 'POST',
+      });
+      const result = await response.json();
+
+      if (response.ok) {
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.orderId === orderId ? { ...n, status: 'accepted' } : n
+          )
+        );
+        setMessage({ type: 'success', text: 'Order accepted successfully.' });
+      } else {
+        setMessage({ type: 'error', text: result.message || 'Failed to accept order.' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Network error.' });
+    }
+  };
+
+  const handleRefuse = async (orderId: number) => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/order/${orderId}/refuse`, {
+        method: 'POST',
+      });
+      const result = await response.json();
+
+      if (response.ok) {
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.orderId === orderId ? { ...n, status: 'refused' } : n
+          )
+        );
+        setMessage({ type: 'success', text: 'Order refused successfully.' });
+      } else {
+        setMessage({ type: 'error', text: result.message || 'Failed to refuse order.' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Network error.' });
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token"); 
+    localStorage.removeItem("id"); 
+    window.location.href = '/';
+  };
+
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-semibold mb-4">Notifications</h2>
-      {notifications.map((notif) => (
-        <div key={notif.id} className="border mb-4 rounded p-4 shadow">
-          <p className="font-medium">{notif.message}</p>
-          <p className="text-sm text-gray-500">
-            {new Date(notif.createdAt).toLocaleString()}
-          </p>
-          <div className="flex space-x-4 mt-2">
-
-            <button
-              onClick={() => handleAccept(notif.order.id)}
-              disabled={isAccepted}
-              className={`flex items-center px-4 py-2 rounded ${isAccepted
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-green-500 hover:bg-green-600 text-white'
-                }`}
-            >
-              <FaMapMarkedAlt className="mr-2" />
-              {isAccepted ? 'Acceptée' : 'Accepter'}
-            </button>
-
-            <button
-              onClick={() => handleRefuse(notif.order.id)}
-              className="flex items-center bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-            >
-              <FaTimesCircle className="mr-2" /> Refuser
-            </button>
-          </div>
-        </div>
-      ))}
-
-      {currentOrder && (
-        <div className="mt-8 p-4 border rounded bg-gray-50 shadow">
-          <h3 className="font-semibold mb-2">Étape 1 : Aller à la pharmacie</h3>
-          <p>{currentOrder.pharmacy?.address || 'Adresse pharmacie inconnue'}</p>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-800">Courier Dashboard</h1>
           <button
-            onClick={() =>
-              window.open(
-                `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentOrder.pharmacy.address)}`,
-                '_blank'
-              )
-            }
-
-            className="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
+            onClick={handleLogout}
+            className="flex items-center text-red-600 hover:text-red-800 font-medium"
           >
-            Voir l'itinéraire
+            <FaSignOutAlt className="mr-2" />
+            Logout
           </button>
         </div>
-      )}
+
+        {message && (
+          <div
+            className={`mb-6 p-4 rounded-lg ${
+              message.type === 'error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
+
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center mb-4">
+            <FaBell className="text-blue-500 mr-2" />
+            <h2 className="text-xl font-semibold text-gray-700">Notifications</h2>
+          </div>
+
+          {notifications.length > 0 ? (
+            <ul className="space-y-4">
+              {notifications.map((notif) => (
+                <li 
+                  key={notif.id} 
+                  className={`p-4 border rounded-lg shadow-sm transition-all hover:shadow-md ${
+                    notif.status === 'accepted' ? 'border-green-200 bg-green-50' : 
+                    notif.status === 'refused' ? 'border-red-200 bg-red-50' : 'border-gray-200'
+                  }`}
+                >
+                  <p className="text-gray-800">{notif.message}</p>
+                  <small className="text-gray-500 block mt-1">
+                    {new Date(notif.createdAt).toLocaleString()}
+                  </small>
+
+                  {!notif.status && (
+                    <div className="mt-3 flex gap-3">
+                      <button
+                        onClick={() => handleAccept(notif.orderId)}
+                        className="flex items-center bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                      >
+                        <FaCheck className="mr-2" />
+                        Accept
+                      </button>
+                      <button
+                        onClick={() => handleRefuse(notif.orderId)}
+                        className="flex items-center bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                      >
+                        <FaTimes className="mr-2" />
+                        Refuse
+                      </button>
+                    </div>
+                  )}
+
+                  {notif.status && (
+                    <div className="mt-3">
+                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                        notif.status === 'accepted' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {notif.status === 'accepted' ? 'Accepted' : 'Refused'}
+                      </span>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No notifications available</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

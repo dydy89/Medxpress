@@ -10,7 +10,7 @@ import {
 import { StatCard } from '../../components/StatCard';
 import { Tabs } from '../../components/Tabs';
 
-type TabKey = 'My Prescriptions' | 'My Medication Intake';
+type TabKey = 'My Prescriptions' ;
 
 interface CreateOrderRequest {
   prescriptionId: number;
@@ -54,7 +54,11 @@ const PatientDashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const patientId = 2;
+const storedId = localStorage.getItem('id');
+if (!storedId) throw new Error("User ID is missing from localStorage");
+
+const patientId = parseInt(storedId, 10); 
+console.log(patientId);
 
   useEffect(() => {
     setLoading(true);
@@ -130,7 +134,9 @@ const PatientDashboard: React.FC = () => {
   }, [prescriptions]);
 
   const handleLogout = () => {
-    window.location.href = '/login';
+    localStorage.removeItem("token"); 
+    localStorage.removeItem("id"); 
+    window.location.href = '/';
   };
 
   const getStatusStyle = (status: string) => {
@@ -153,7 +159,7 @@ const PatientDashboard: React.FC = () => {
       prescriptionId,
       patientId,
       pharmacyId: 1,
-      deliveryDriverId: 1,
+      deliveryDriverId: 38,
     };
 
     axios.post(
@@ -238,12 +244,6 @@ const PatientDashboard: React.FC = () => {
         </div>
       </div>
     ),
-
-    'My Medication Intake': (
-      <div className="bg-white p-6 rounded-xl shadow text-gray-600">
-        <p>Upcoming order history...</p>
-      </div>
-    ),
   };
 
   return (
@@ -262,6 +262,7 @@ const PatientDashboard: React.FC = () => {
           <FaSignOutAlt className="mr-2" />
           Logout
         </button>
+
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">

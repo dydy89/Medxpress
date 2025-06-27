@@ -23,13 +23,14 @@ const LoginPage: React.FC = () => {
       });
 
     const token = response.data;
-    localStorage.setItem('jwt', token);
+    localStorage.setItem('token', token);
     setMessage({ text: "Login successful! Redirecting...", type: 'success' });
 
     const decoded: any = jwtDecode(token);
     const role = decoded?.role?.toUpperCase();
     localStorage.setItem('id', decoded?.id);
     const userId = decoded?.id;
+
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     switch (role) {
@@ -43,7 +44,7 @@ const LoginPage: React.FC = () => {
           navigate('/pharmacist');
           break;
         case 'DELIVERY_DRIVER':
-          navigate(`/courier/${userId}`);
+          navigate(`/courier`);
           break;
         case 'ADMIN':
           navigate('/main');

@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
 
 const VerifyOrderCode: React.FC = () => {
-  const orderId = 50;
+  const { orderId } = useParams<{ orderId: string }>();
+
   const [code, setCode] = useState<string[]>(Array(6).fill(''));
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');

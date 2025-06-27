@@ -8,6 +8,8 @@ interface Order {
   id: number;
   status: string;
   prescriptionId: number;
+  qrcode: string; 
+
 }
 
 interface Prescription {
@@ -92,12 +94,19 @@ const PharmacistDashboard: React.FC = () => {
               <p className="text-sm text-gray-500">Prescription ID : {order.prescriptionId}</p>
               <p className="text-sm text-gray-500">Statut : {order.status}</p>
 
-              {renderQRCode()}
+              {order.qrcode && (
+                <img
+                  src={`data:image/png;base64,${order.qrcode}`}
+                  alt={`QR Code commande ${order.id}`}
+                  className="w-24 h-24 mt-2"
+                />
+              )}
             </div>
           </div>
         ))}
       </div>
     )
+
   };
 
   const handleLogout = () => {

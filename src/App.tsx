@@ -21,7 +21,8 @@ const App: React.FC = () => {
       <Route path="/doctor" element={<DoctorDashboard />} />
       <Route path="/pharmacist" element={<PharmacistDashboard />} />
       <Route path="/CheckCode" element={<VerifyOrderCode />} />
-      <Route path="/courier/:driverId" element={<CourierDashboard />} />
+      <Route path="/CheckCode/:orderId" element={<VerifyOrderCode />} />
+      <Route path="/courier" element={<CourierDashboard />} />
     </Routes>
   );
 };

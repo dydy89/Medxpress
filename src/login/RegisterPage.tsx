@@ -63,13 +63,16 @@ const RegisterPage: React.FC = () => {
       };
 
       try {
-        await axios.post('http://localhost:8080/api/auth/signup', {
-          email: email,
-          password: password,
-          role: roleMapping[selectedRole],
-          kbisNumber: selectedRole === 'courier' ? kbisNumber : undefined
+          await axios.post('http://localhost:8080/api/auth/signup', {
+            email: email,
+            password: password,
+            role: roleMapping[selectedRole],
+            firstName: firstname,   
+            name: name,             
+            kbisNumber: selectedRole === 'courier' ? kbisNumber : undefined
+          });
 
-        });
+
 
         setMessage({ text: "Account created successfully! Redirecting to login...", type: 'success' });
         
@@ -123,33 +126,46 @@ const RegisterPage: React.FC = () => {
               />
             </div>
           </div>
-          <div>
-          <label htmlFor="firstname" className="block text-sm font-medium text-gray-700">
-          Prénom
-         </label>
-          <input
-          id="firstname"
-          type="text"
-          value={firstname}
-          onChange={e => setFirstname(e.target.value)}
-          required
-          className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
+
+          <div className="space-y-1">
+            <label htmlFor="firstname" className="block text-sm font-medium text-gray-700">
+              First Name
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FiUser className="text-gray-400" />
+              </div>
+              <input
+                id="firstname"
+                type="text"
+                value={firstname}
+                onChange={(e) => setFirstname(e.target.value)}
+                required
+                className="pl-10 mt-1 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                placeholder="First name"
+              />
+            </div>
           </div>
 
-<div>
-  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-    Nom
-  </label>
-  <input
-    id="name"
-    type="text"
-    value={name}
-    onChange={e => setName(e.target.value)}
-    required
-    className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-  />
-</div>
+          <div className="space-y-1">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              Last Name
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FiUser className="text-gray-400" />
+              </div>
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="pl-10 mt-1 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                placeholder="Last name"
+              />
+            </div>
+          </div>
 
           <div className="space-y-1">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
