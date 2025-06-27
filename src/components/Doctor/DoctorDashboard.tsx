@@ -39,15 +39,23 @@ const DoctorDashboard: React.FC = () => {
   }, []);
 
  useEffect(() => {
-  fetch("http://localhost:8080/api/patient/all")
-    .then(res => res.json())
+  const token = localStorage.getItem("jwt");
+
+  fetch("http://localhost:8080/api/patient/all", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then(res => {
+      if (!res.ok) throw new Error("Erreur d'accès à la liste des patients");
+      return res.json();
+    })
     .then(data => {
       console.log("👥 Noms des patients :", data);
       setAllPatients(data);
     })
     .catch(err => console.error("Erreur chargement noms patients:", err));
 }, []);
-
   const tabContent: Record<TabKey, JSX.Element> = {
     "Mes Patients": (
       <div className="bg-white p-6 rounded-xl shadow space-y-6">
@@ -89,8 +97,8 @@ const DoctorDashboard: React.FC = () => {
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Liste des patients</h2>
           <ul className="space-y-2">
             {allPatients.map((patient, idx) => (
-  <option key={idx} value={patient.idPatient}>{patient.user?.name || "Nom inconnu"}</option>
-))}
+              <option key={idx} value={patient.idPatient}>{patient.user?.name || "Nom inconnu"}</option>
+            ))}
           </ul>
         </div>
       </div>
@@ -109,23 +117,26 @@ const DoctorDashboard: React.FC = () => {
         <p className="text-sm text-gray-500 mb-6">Création de l'ordonnance du patient</p>
 
         <div className="grid sm:grid-cols-2 gap-4">
-         <select
-  value={selectedPatientId}
-  onChange={(e) => setSelectedPatientId(e.target.value)}
-  className="input"
->
-  <option value="">-- Sélectionner un patient --</option>
-  {allPatients.map((name, idx) => (
-    <option key={idx} value={name}>{name}</option>
-  ))}
-</select>
+          <select
+              value={selectedPatientId}
+               onChange={(e) => setSelectedPatientId(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg p-2"
+                      >
+                 <option value="">-- Sélectionner un patient --</option>
+               {allPatients.map((patient) => (
+                  <option key={patient.idPatient} value={patient.idPatient}>
+                {patient.idPatient}
+          </option>
+          ))}
+        </select>
+
           <input type="date" className="input" />
         </div>
         <input type="text" placeholder="Médicaments prescrits" className="input mt-4" />
         <input type="text" placeholder="Instructions de prise" className="input mt-4" />
 
         <button className="mt-6 bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded flex items-center">
-          <FaQrcode className="mr-2" /> Générer Ordonnance 
+          <FaQrcode className="mr-2" /> Générer Ordonnance
         </button>
       </div>
     )
