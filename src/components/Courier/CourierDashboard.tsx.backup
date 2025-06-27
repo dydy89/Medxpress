@@ -370,14 +370,14 @@ const CourierDashboard: React.FC = () => {
       
       await courierService.acceptDelivery(deliveryId);
       
-      // Backend now properly changes status, so refresh data normally
+      // Refresh data
       const updatedDeliveries = await courierService.getDeliveries();
       const updatedStats = await courierService.getDashboardStats();
       
       setDeliveries(updatedDeliveries);
       setStats(updatedStats);
       
-      console.log(`✅ Delivery ${deliveryId} accepted successfully`);
+      console.log(`✅ Delivery ${deliveryId} accepted`);
       
     } catch (err: any) {
       console.error('Error accepting delivery:', err);

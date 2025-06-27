@@ -123,6 +123,54 @@ export interface UpdateOrderStatusRequest {
   status: 'PENDING' | 'PREPARING' | 'READY' | 'DISPATCHED';
 }
 
+// Courier/Delivery Driver interfaces
+export interface CourierDashboardStats {
+  totalDeliveries: number;
+  assignedDeliveries: number;
+  inTransitDeliveries: number;
+  deliveredCount: number;
+}
+
+export interface CourierDelivery {
+  id: number;
+  status: 'DISPATCHED' | 'IN_TRANSIT' | 'DELIVERED';
+  date: string;
+  code: string;
+  patient: {
+    email: string;
+    firstName: string;
+    address?: string;
+  };
+  prescription: {
+    id: number;
+    doctor: {
+      email: string;
+    };
+    medicaments: Array<{
+      nom: string;
+    }>;
+  };
+  pharmacy: {
+    name: string;
+    address: string;
+    latitude?: number;
+    longitude?: number;
+  };
+  deliveryDriver?: {
+    email: string;
+    firstName?: string;
+    name?: string;
+  };
+}
+
+export interface UpdateDeliveryStatusRequest {
+  status: 'DISPATCHED' | 'IN_TRANSIT' | 'DELIVERED';
+}
+
+export interface CourierAvailabilityRequest {
+  available: boolean;
+}
+
 export interface CreateOrderRequest {
   prescriptionId: number;
   patientId: number; // Actually userId where role = "PATIENT"
@@ -305,6 +353,127 @@ export const pharmacistService = {
     } catch (error: any) {
       throw new ApiError({
         message: error.response?.data?.message || 'Failed to fetch pharmacist profile',
+        status: error.response?.status || 500,
+      });
+    }
+  },
+};
+
+// Courier/Delivery Driver service for all courier-related API calls
+export const courierService = {
+  // Get dashboard statistics
+  getDashboardStats: async (): Promise<CourierDashboardStats> => {
+    try {
+      const response = await api.get('/api/deliveryDriver/dashboard/stats');
+      return response.data;
+    } catch (error: any) {
+      throw new ApiError({
+        message: error.response?.data?.message || 'Failed to fetch dashboard stats',
+        status: error.response?.status || 500,
+      });
+    }
+  },
+
+  // Get all deliveries (optionally filtered by status)
+  getDeliveries: async (status?: string): Promise<CourierDelivery[]> => {
+    try {
+      const url = status ? `/api/deliveryDriver/deliveries?status=${status}` : '/api/deliveryDriver/deliveries';
+      const response = await api.get(url);
+      return response.data;
+    } catch (error: any) {
+      throw new ApiError({
+        message: error.response?.data?.message || 'Failed to fetch deliveries',
+        status: error.response?.status || 500,
+      });
+    }
+  },
+
+  // Get specific delivery details
+  getDeliveryDetails: async (deliveryId: number): Promise<CourierDelivery> => {
+    try {
+      const response = await api.get(`/api/deliveryDriver/deliveries/${deliveryId}`);
+      return response.data;
+    } catch (error: any) {
+      throw new ApiError({
+        message: error.response?.data?.message || 'Failed to fetch delivery details',
+        status: error.response?.status || 500,
+      });
+    }
+  },
+
+  // Update delivery status
+  updateDeliveryStatus: async (deliveryId: number, status: 'DISPATCHED' | 'IN_TRANSIT' | 'DELIVERED'): Promise<any> => {
+    try {
+      const response = await api.put(`/api/deliveryDriver/deliveries/${deliveryId}/status`, { status });
+      return response.data;
+    } catch (error: any) {
+      throw new ApiError({
+        message: error.response?.data?.message || 'Failed to update delivery status',
+        status: error.response?.status || 500,
+      });
+    }
+  },
+
+  // Accept delivery
+  acceptDelivery: async (deliveryId: number): Promise<any> => {
+    try {
+      const response = await api.post(`/api/deliveryDriver/deliveries/${deliveryId}/accept`);
+      return response.data;
+    } catch (error: any) {
+      throw new ApiError({
+        message: error.response?.data?.message || 'Failed to accept delivery',
+        status: error.response?.status || 500,
+      });
+    }
+  },
+
+  // Refuse delivery
+  refuseDelivery: async (deliveryId: number): Promise<any> => {
+    try {
+      const response = await api.post(`/api/deliveryDriver/deliveries/${deliveryId}/refuse`);
+      return response.data;
+    } catch (error: any) {
+      throw new ApiError({
+        message: error.response?.data?.message || 'Failed to refuse delivery',
+        status: error.response?.status || 500,
+      });
+    }
+  },
+
+  // Get courier profile
+  getCourierProfile: async (): Promise<User> => {
+    try {
+      const response = await api.get('/api/deliveryDriver/profile');
+      return response.data;
+    } catch (error: any) {
+      throw new ApiError({
+        message: error.response?.data?.message || 'Failed to fetch courier profile',
+        status: error.response?.status || 500,
+      });
+    }
+  },
+
+  // Get delivery history
+  getDeliveryHistory: async (): Promise<CourierDelivery[]> => {
+    try {
+      const response = await api.get('/api/deliveryDriver/history');
+      return response.data;
+    } catch (error: any) {
+      throw new ApiError({
+        message: error.response?.data?.message || 'Failed to fetch delivery history',
+        status: error.response?.status || 500,
+      });
+    }
+  },
+
+  // Update availability status
+  updateAvailability: async (available: boolean): Promise<any> => {
+    try {
+      const response = await api.put('/api/deliveryDriver/availability', { available });
+      return response.data;
+    } catch (error: any) {
+      throw new ApiError({
+        message: error.response?.data?.message || 'Failed to update availability',
         status: error.response?.status || 500,
       });
     }

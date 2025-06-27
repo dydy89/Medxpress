@@ -50,7 +50,28 @@ const App: React.FC = () => {
           </RouteGuard>
         } 
       />
-      <Route path="/courier/:driverId" element={<CourierDashboard />} />
+      <Route 
+        path="/courier/:driverId" 
+        element={
+          <RouteGuard 
+            requiredRole="DELIVERY_DRIVER" 
+            redirectMessage="This dashboard is for delivery drivers only. Please log in with a delivery driver account."
+          >
+            <CourierDashboard />
+          </RouteGuard>
+        } 
+      />
+      <Route 
+        path="/courier" 
+        element={
+          <RouteGuard 
+            requiredRole="DELIVERY_DRIVER" 
+            redirectMessage="This dashboard is for delivery drivers only. Please log in with a delivery driver account."
+          >
+            <CourierDashboard />
+          </RouteGuard>
+        } 
+      />
     </Routes>
   );
 };
