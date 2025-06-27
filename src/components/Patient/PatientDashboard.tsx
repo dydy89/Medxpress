@@ -1,13 +1,13 @@
 import { jwtDecode } from 'jwt-decode';
 import React, { useEffect, useState } from 'react';
 import {
-  FaClock,
-  FaCube,
-  FaExclamationTriangle,
-  FaFileMedical,
-  FaPills,
-  FaSignOutAlt,
-  FaSpinner,
+    FaClock,
+    FaCube,
+    FaExclamationTriangle,
+    FaFileMedical,
+    FaPills,
+    FaSignOutAlt,
+    FaSpinner,
 } from 'react-icons/fa';
 import { StatCard } from '../../components/StatCard';
 import { Tabs } from '../../components/Tabs';
@@ -104,8 +104,14 @@ const PatientDashboard: React.FC = () => {
     }
     
     // Step 3: Check token role
-    const tokenRole = decoded?.role?.toUpperCase();
-    console.log("🎭 Token role:", tokenRole);
+    let tokenRole = decoded?.role?.toUpperCase();
+    console.log("🎭 Token role (raw):", tokenRole);
+    
+    // Remove ROLE_ prefix if it exists (consistent with AuthService)
+    if (tokenRole && tokenRole.startsWith('ROLE_')) {
+      tokenRole = tokenRole.substring(5); // Remove "ROLE_" prefix
+      console.log("🎭 Token role (cleaned):", tokenRole);
+    }
     
     if (tokenRole !== 'PATIENT') {
       console.error(`❌ Wrong role. Expected PATIENT, got: ${tokenRole}`);
@@ -151,8 +157,14 @@ const PatientDashboard: React.FC = () => {
         const userInfo = await userService.getCurrentUser(userId);
         
         // Final backend validation
-        if (userInfo.role !== 'PATIENT') {
-          setError(`Backend role mismatch. Expected PATIENT, got: ${userInfo.role}. Please contact support.`);
+        let backendRole = userInfo.role?.toUpperCase();
+        // Remove ROLE_ prefix if it exists (consistent with AuthService)
+        if (backendRole && backendRole.startsWith('ROLE_')) {
+          backendRole = backendRole.substring(5); // Remove "ROLE_" prefix
+        }
+        
+        if (backendRole !== 'PATIENT') {
+          setError(`Backend role mismatch. Expected PATIENT, got: ${backendRole}. Please contact support.`);
           console.error("🚫 Backend role mismatch, logging out...");
           AuthService.logout();
           return;
@@ -278,11 +290,13 @@ const PatientDashboard: React.FC = () => {
       
       // Handle specific error cases
       if (err.status === 403) {
-        // This should not happen with our validation, but if it does:
-        console.error("🚨 CRITICAL: 403 error despite PATIENT token validation!");
-        console.error("🚨 This indicates a backend configuration issue!");
+        // Known backend issue - documented in apis.md
+        console.error("🚨 KNOWN BACKEND ISSUE: Order creation endpoint blocked");
+        console.error("- POST /api/patient/orders returns 403 (documented in apis.md)");
+        console.error("- Frontend authentication is working correctly");
+        console.error("- Backend security configuration needs to be updated");
         
-        alert('Order creation failed: Access denied despite valid patient authentication. This is a backend configuration issue - please contact support.');
+        alert('Order creation is temporarily unavailable due to a backend configuration issue.\n\nYour authentication is working correctly, but the backend needs to be updated to allow order creation.\n\nThis is a known issue documented in the project.');
       } else if (err.status === 401) {
         alert('Authentication failed. Please log in again.');
         AuthService.logout();

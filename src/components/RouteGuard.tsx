@@ -12,9 +12,14 @@ const RouteGuard: React.FC<RouteGuardProps> = ({
   requiredRole, 
   redirectMessage 
 }) => {
+  console.log("🛡️ RouteGuard - Vérification d'accès pour le rôle:", requiredRole);
+  
   const validation = AuthService.validateRole(requiredRole);
   
+  console.log("🛡️ RouteGuard - Résultat de validation:", validation);
+  
   if (!validation.isValid) {
+    console.error("🛡️ RouteGuard - Accès refusé, affichage du message d'erreur");
     // Show error message and redirect
     const message = redirectMessage || `Access denied. This page requires ${requiredRole} role.`;
     
@@ -40,6 +45,7 @@ const RouteGuard: React.FC<RouteGuardProps> = ({
     );
   }
 
+  console.log("✅ RouteGuard - Accès autorisé, affichage du contenu");
   return <>{children}</>;
 };
 

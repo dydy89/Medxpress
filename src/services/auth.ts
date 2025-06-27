@@ -25,17 +25,36 @@ export class AuthService {
   static validateToken(): AuthValidation {
     try {
       const token = localStorage.getItem('jwt');
+      const userIdFromStorage = localStorage.getItem('id');
+      
+      console.log("🔍 AuthService - Validation du token:");
+      console.log("  - Token présent:", !!token);
+      console.log("  - ID en localStorage:", userIdFromStorage);
+      
       if (!token) {
+        console.error("❌ AuthService - Pas de token JWT");
         return { isValid: false, userId: null, tokenRole: null };
       }
 
       const decoded: DecodedToken = jwtDecode(token);
-      const tokenRole = decoded?.role?.toUpperCase() || null;
+      let tokenRole = decoded?.role?.toUpperCase() || null;
+      
+      console.log("  - Rôle brut du token:", decoded?.role);
+      console.log("  - Rôle après toUpperCase:", tokenRole);
+      
+      // Remove ROLE_ prefix if it exists
+      if (tokenRole && tokenRole.startsWith('ROLE_')) {
+        console.log("  - Suppression du préfixe ROLE_");
+        tokenRole = tokenRole.substring(5); // Remove "ROLE_" prefix
+      }
+      
+      console.log("  - Rôle final:", tokenRole);
+      
       const email = decoded?.sub || null;
 
       // Check if token is expired
       if (decoded.exp && Date.now() >= decoded.exp * 1000) {
-        console.warn('Token expired');
+        console.warn('❌ AuthService - Token expiré');
         this.logout();
         return { isValid: false, userId: null, tokenRole };
       }
@@ -43,14 +62,18 @@ export class AuthService {
       // Get user ID from localStorage (more reliable than token)
       const userIdStr = localStorage.getItem('id');
       if (!userIdStr || userIdStr === 'undefined' || userIdStr === 'null') {
+        console.error("❌ AuthService - Pas d'ID utilisateur valide en localStorage");
         return { isValid: false, userId: null, tokenRole };
       }
 
       const userId = parseInt(userIdStr);
       if (isNaN(userId)) {
+        console.error("❌ AuthService - ID utilisateur n'est pas un nombre valide");
         return { isValid: false, userId: null, tokenRole };
       }
 
+      console.log("✅ AuthService - Validation réussie:", { userId, tokenRole, email });
+      
       return { 
         isValid: true, 
         userId, 
@@ -58,7 +81,7 @@ export class AuthService {
         email 
       };
     } catch (err) {
-      console.error('Token validation error:', err);
+      console.error('❌ AuthService - Erreur validation token:', err);
       return { isValid: false, userId: null, tokenRole: null };
     }
   }
@@ -69,18 +92,26 @@ export class AuthService {
   static validateRole(requiredRole: string): AuthValidation {
     const validation = this.validateToken();
     
+    console.log("🔍 RouteGuard - Validation du rôle:");
+    console.log("  - Rôle requis:", requiredRole.toUpperCase());
+    console.log("  - Rôle du token:", validation.tokenRole);
+    console.log("  - Validation token valide:", validation.isValid);
+    console.log("  - ID utilisateur:", validation.userId);
+    
     if (!validation.isValid) {
+      console.error("❌ RouteGuard - Token invalide");
       return validation;
     }
 
     if (validation.tokenRole !== requiredRole.toUpperCase()) {
-      console.error(`Access denied. Expected ${requiredRole} role, got: ${validation.tokenRole}`);
+      console.error(`❌ RouteGuard - Accès refusé. Rôle attendu: ${requiredRole}, rôle obtenu: ${validation.tokenRole}`);
       return { 
         ...validation, 
         isValid: false 
       };
     }
 
+    console.log("✅ RouteGuard - Validation réussie");
     return validation;
   }
 

@@ -113,6 +113,7 @@ export const prescriptionService = {
 
   // Create an order for a prescription
   // Note: patientId is actually userId where user.role = "PATIENT"
+  // KNOWN ISSUE: POST /api/patient/orders returns 403 Forbidden (backend security config issue)
   createOrder: async (prescriptionId: number, userId: number): Promise<any> => {
     try {
       const requestData = {
@@ -160,13 +161,18 @@ export const prescriptionService = {
       });
       console.error("- Full error object:", error);
       
-      // Check if it's specifically a 403 authentication issue
+      // Check if it's the known 403 backend configuration issue
       if (error.response?.status === 403) {
-        console.error("🚫 403 FORBIDDEN - Detailed Analysis:");
-        console.error("- This means the server understood the request but refuses to authorize it");
-        console.error("- Token was likely received but doesn't have proper permissions");
-        console.error("- Check if the backend endpoint requires specific role/permissions");
-        console.error("- Verify backend Spring Security configuration for /api/patient/orders");
+        console.error("🚨 KNOWN BACKEND ISSUE: POST /api/patient/orders is blocked by security config");
+        console.error("- This is documented in apis.md as a non-working endpoint");
+        console.error("- Frontend authentication is working correctly");
+        console.error("- The backend Spring Security needs to be updated to allow this endpoint");
+        
+        // Provide a more user-friendly error message for the known issue
+        throw new ApiError({
+          message: 'Order creation is temporarily unavailable due to a backend configuration issue. Your authentication is working correctly. Please contact the development team to enable the /api/patient/orders endpoint.',
+          status: 403,
+        });
       }
       
       throw new ApiError({
